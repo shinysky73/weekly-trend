@@ -16,3 +16,32 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Category {
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  keywords       Keyword[]
+  filterKeywords FilterKeyword[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Keyword {
+  id         Int      @id @default(autoincrement())
+  text       String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId Int
+  createdAt  DateTime @default(now())
+
+  @@unique([categoryId, text])
+}
+
+model FilterKeyword {
+  id         Int      @id @default(autoincrement())
+  text       String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId Int
+  createdAt  DateTime @default(now())
+
+  @@unique([categoryId, text])
+}
