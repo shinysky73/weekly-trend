@@ -4,13 +4,15 @@ import { mapSelectedToNewsletterItems } from '../services/mapSelectedNews';
 import { useSelectionStore } from '../stores/selectionStore';
 import type { CategoryGroup } from '../hooks/useRunDetail';
 import { NewsletterHeader } from './NewsletterHeader';
+import { SendNewsletterForm } from './SendNewsletterForm';
 
 interface NewsletterPreviewProps {
   groups: CategoryGroup[];
+  pipelineRunId?: number;
   onBack: () => void;
 }
 
-export function NewsletterPreview({ groups, onBack }: NewsletterPreviewProps) {
+export function NewsletterPreview({ groups, pipelineRunId, onBack }: NewsletterPreviewProps) {
   const { selectedIds, title, subtitle } = useSelectionStore();
 
   const items = useMemo(
@@ -54,9 +56,11 @@ export function NewsletterPreview({ groups, onBack }: NewsletterPreviewProps) {
           srcDoc={html}
           title="뉴스레터 미리보기"
           className="w-full border-0"
-          style={{ height: '80vh' }}
+          style={{ height: '70vh' }}
         />
       </div>
+
+      <SendNewsletterForm html={html} subject={title} pipelineRunId={pipelineRunId} />
     </div>
   );
 }

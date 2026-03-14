@@ -37,6 +37,10 @@ export default defineConfig({
         target: process.env.API_TARGET ?? 'http://localhost:3002',
         changeOrigin: true,
       },
+      '/newsletter': {
+        target: process.env.API_TARGET ?? 'http://localhost:3002',
+        changeOrigin: true,
+      },
     },
   },
 });

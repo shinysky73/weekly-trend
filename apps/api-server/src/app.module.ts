@@ -8,6 +8,7 @@ import { CategoryModule } from './category/category.module';
 import { NewsModule } from './news/news.module';
 import { PipelineModule } from './pipeline/pipeline.module';
 import { SummaryModule } from './summary/summary.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { SummaryModule } from './summary/summary.module';
     NewsModule,
     SummaryModule,
     PipelineModule,
+    NewsletterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

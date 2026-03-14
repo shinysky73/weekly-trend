@@ -78,7 +78,7 @@ export function RunDetailPage() {
   }
 
   if (mode === 'preview') {
-    return <NewsletterPreview groups={groupedNews} onBack={() => setMode('select')} />;
+    return <NewsletterPreview groups={groupedNews} pipelineRunId={runId} onBack={() => setMode('select')} />;
   }
 
   return (

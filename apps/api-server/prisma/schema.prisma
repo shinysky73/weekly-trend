@@ -99,3 +99,13 @@ model PipelineRun {
   completedAt    DateTime?
   news           News[]
 }
+
+model NewsletterSend {
+  id             Int      @id @default(autoincrement())
+  pipelineRunId  Int?
+  subject        String
+  recipientCount Int
+  status         String   @default("sent")
+  errorLog       String?
+  sentAt         DateTime @default(now())
+}
