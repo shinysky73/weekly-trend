@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRunDetail } from './hooks/useRunDetail';
 import { useSelectionStore } from './stores/selectionStore';
 import { exportCsv } from './services/newsletterApi';
+import { mapSelectedToCsvItemsWithKeyword } from './services/mapSelectedNews';
 import { RunNewsList } from './components/RunNewsList';
 import { SelectionSidebar } from './components/SelectionSidebar';
 import { NewsletterPreview } from './components/NewsletterPreview';
@@ -27,21 +28,7 @@ export function RunDetailPage() {
   }, [data?.status, refetch]);
 
   const handleExportCsv = useCallback(() => {
-    const items = groupedNews.flatMap((g) =>
-      g.news
-        .filter((n) => selectedIds.has(n.id))
-        .map((n) => ({
-          categoryName: g.categoryName,
-          keyword: n.keyword,
-          title: n.title,
-          link: n.link,
-          summaryText: n.summary?.text ?? n.snippet ?? '',
-          publisher: n.publisher ?? '',
-          publishedDate: n.publishedDate
-            ? new Date(n.publishedDate).toLocaleDateString('ko-KR')
-            : '',
-        })),
-    );
+    const items = mapSelectedToCsvItemsWithKeyword(groupedNews, selectedIds);
     const blob = exportCsv(items);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

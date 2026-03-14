@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { RunDetailNews } from '../services/newsletterApi';
+import { formatDate } from '../../../lib/format';
 
 interface RunNewsCardProps {
   news: RunDetailNews;
@@ -46,7 +47,7 @@ export function RunNewsCard({ news, selected, onToggle }: RunNewsCardProps) {
         <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
           {news.publisher && <span>{news.publisher}</span>}
           {news.publisher && news.publishedDate && <span>·</span>}
-          {news.publishedDate && <span>{new Date(news.publishedDate).toLocaleDateString('ko-KR')}</span>}
+          {news.publishedDate && <span>{formatDate(news.publishedDate)}</span>}
         </div>
         {summaryText && (
           <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{summaryText}</p>

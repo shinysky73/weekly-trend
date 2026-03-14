@@ -1,3 +1,5 @@
+import { CATEGORY_BADGE_COLOR } from '../../../lib/constants';
+
 export interface NewsletterItem {
   title: string;
   link: string;
@@ -21,39 +23,27 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function renderContentWithThumbnail(item: NewsletterItem): string {
-  return `<tr>
-  <td style="padding-top: 20px;">
-    <table style="border-spacing: 0;">
-      <tr>
-        <td style="width: 140px; height: 140px; text-align: center; vertical-align: top;">
-          <img style="width: 140px; height: 140px; object-fit: cover; object-position: center; display: block; overflow: hidden;" src="${escapeHtml(item.thumbnailUrl!)}"/>
+function renderContentItem(item: NewsletterItem): string {
+  const thumbnailCell = item.thumbnailUrl
+    ? `<td style="width: 140px; height: 140px; text-align: center; vertical-align: top;">
+          <img style="width: 140px; height: 140px; object-fit: cover; object-position: center; display: block; overflow: hidden;" src="${escapeHtml(item.thumbnailUrl)}"/>
         </td>
-        <td style="padding-left: 20px;">
-          <a href="${escapeHtml(item.link)}" style="color: inherit; text-decoration: none;">
-            <p style="font-size:16px;font-weight:600;color:black;margin:0">${escapeHtml(item.title)}</p>
-          </a>
-          <p style="font-size:14px;color:#000000;margin:14px 0 0;">${escapeHtml(item.summaryText)}</p>
-          <p style="font-size:12px;color:#8e8e93;margin:9px 0 0;">${escapeHtml(item.publisher)} | ${escapeHtml(item.publishedDate)}</p>
-        </td>
-      </tr>
-    </table>
-  </td>
-</tr>`;
-}
+        <td style="padding-left: 20px;">`
+    : '<td>';
 
-function renderContentNoThumbnail(item: NewsletterItem): string {
+  const closeTd = '</td>';
+
   return `<tr>
   <td style="padding-top: 20px;">
     <table style="border-spacing: 0;">
       <tr>
-        <td>
+        ${thumbnailCell}
           <a href="${escapeHtml(item.link)}" style="color: inherit; text-decoration: none;">
             <p style="font-size:16px;font-weight:600;color:black;margin:0">${escapeHtml(item.title)}</p>
           </a>
           <p style="font-size:14px;color:#000000;margin:14px 0 0;">${escapeHtml(item.summaryText)}</p>
           <p style="font-size:12px;color:#8e8e93;margin:9px 0 0;">${escapeHtml(item.publisher)} | ${escapeHtml(item.publishedDate)}</p>
-        </td>
+        ${closeTd}
       </tr>
     </table>
   </td>
@@ -61,17 +51,11 @@ function renderContentNoThumbnail(item: NewsletterItem): string {
 }
 
 function renderCategory(categoryName: string, items: NewsletterItem[]): string {
-  const contents = items
-    .map((item) =>
-      item.thumbnailUrl
-        ? renderContentWithThumbnail(item)
-        : renderContentNoThumbnail(item),
-    )
-    .join('\n');
+  const contents = items.map(renderContentItem).join('\n');
 
   return `<table width="100%" style="border-spacing: 0; margin-bottom: 15px;">
   <tr>
-    <td style="background-color:#0047FF;padding:0.5em 1.7em;border-radius:10em;display:inline-flex;justify-content:center;align-items:center;">
+    <td style="background-color:${CATEGORY_BADGE_COLOR};padding:0.5em 1.7em;border-radius:10em;display:inline-flex;justify-content:center;align-items:center;">
       <p style="font-weight:600;font-size:1.5em;color:white;text-align:center;margin:5px 7px;line-height:1;">${escapeHtml(categoryName)}</p>
     </td>
   </tr>

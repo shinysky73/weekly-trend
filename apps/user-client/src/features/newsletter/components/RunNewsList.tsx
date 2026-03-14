@@ -1,6 +1,7 @@
 import type { CategoryGroup } from '../hooks/useRunDetail';
 import { useSelectionStore } from '../stores/selectionStore';
 import { RunNewsCard } from './RunNewsCard';
+import { CATEGORY_BADGE_COLOR } from '../../../lib/constants';
 
 interface RunNewsListProps {
   groups: CategoryGroup[];
@@ -28,7 +29,7 @@ export function RunNewsList({ groups }: RunNewsListProps) {
           <div key={group.categoryId}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: '#0047FF' }}>
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: CATEGORY_BADGE_COLOR }}>
                   {group.categoryName}
                 </span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">

@@ -1,0 +1,1 @@
+export const CATEGORY_BADGE_COLOR = '#0047FF';

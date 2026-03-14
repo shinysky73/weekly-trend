@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { generateNewsletterHtml } from '../services/newsletterHtml';
-import type { NewsletterItem } from '../services/newsletterHtml';
+import { mapSelectedToNewsletterItems } from '../services/mapSelectedNews';
 import { useSelectionStore } from '../stores/selectionStore';
 import type { CategoryGroup } from '../hooks/useRunDetail';
 import { NewsletterHeader } from './NewsletterHeader';
@@ -13,30 +13,26 @@ interface NewsletterPreviewProps {
 export function NewsletterPreview({ groups, onBack }: NewsletterPreviewProps) {
   const { selectedIds, title, subtitle } = useSelectionStore();
 
-  const items = useMemo<NewsletterItem[]>(() => {
-    const result: NewsletterItem[] = [];
-    for (const group of groups) {
-      for (const news of group.news) {
-        if (!selectedIds.has(news.id)) continue;
-        result.push({
-          title: news.title,
-          link: news.link,
-          summaryText: news.summary?.text ?? news.snippet ?? '',
-          publisher: news.publisher ?? '',
-          publishedDate: news.publishedDate
-            ? new Date(news.publishedDate).toLocaleDateString('ko-KR')
-            : '',
-          thumbnailUrl: news.thumbnailUrl,
-          categoryName: group.categoryName,
-        });
-      }
-    }
-    return result;
-  }, [groups, selectedIds]);
+  const items = useMemo(
+    () => mapSelectedToNewsletterItems(groups, selectedIds),
+    [groups, selectedIds],
+  );
+
+  // Debounce title/subtitle for iframe re-rendering
+  const [debouncedTitle, setDebouncedTitle] = useState(title);
+  const [debouncedSubtitle, setDebouncedSubtitle] = useState(subtitle);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedTitle(title);
+      setDebouncedSubtitle(subtitle);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [title, subtitle]);
 
   const html = useMemo(
-    () => generateNewsletterHtml(items, { title, subtitle }),
-    [items, title, subtitle],
+    () => generateNewsletterHtml(items, { title: debouncedTitle, subtitle: debouncedSubtitle }),
+    [items, debouncedTitle, debouncedSubtitle],
   );
 
   return (

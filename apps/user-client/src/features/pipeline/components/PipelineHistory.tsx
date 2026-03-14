@@ -2,17 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePipelineStore } from '../stores/pipelineStore';
 import { fetchPipelineRuns } from '../services/pipelineApi';
-
-function formatDateTime(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+import { formatDateTime } from '../../../lib/format';
 
 const statusLabels: Record<string, { text: string; className: string }> = {
   completed: { text: '완료', className: 'text-green-600 dark:text-green-400' },

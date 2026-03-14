@@ -1,17 +1,12 @@
 import { useState } from 'react';
 import type { NewsItem } from '../services/newsApi';
+import { formatDate } from '../../../lib/format';
 
 interface NewsCardProps {
   news: NewsItem;
 }
 
 const PLACEHOLDER_IMG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="160" height="90" fill="%23e5e7eb"%3E%3Crect width="160" height="90"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-}
 
 export function NewsCard({ news }: NewsCardProps) {
   const [imgError, setImgError] = useState(false);
