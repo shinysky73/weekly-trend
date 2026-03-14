@@ -20,16 +20,21 @@ describe('pipelineApi', () => {
     expect(result).toEqual({ id: 1, status: 'running' });
   });
 
-  it('shouldFetchPipelineRuns: GET /pipeline/runs 요청', async () => {
-    const mockRuns = [
-      { id: 2, status: 'completed', totalNews: 10, totalSummaries: 5, errorLog: null, startedAt: '2026-03-14', completedAt: '2026-03-14' },
-    ];
-    mockedAxios.get.mockResolvedValue({ data: mockRuns });
+  it('shouldFetchPipelineRuns: GET /pipeline/runs에 page, limit 쿼리 전달', async () => {
+    const mockResponse = {
+      data: [{ id: 2, status: 'completed' }],
+      total: 1,
+      page: 1,
+      limit: 10,
+    };
+    mockedAxios.get.mockResolvedValue({ data: mockResponse });
 
-    const result = await fetchPipelineRuns();
+    const result = await fetchPipelineRuns(1, 10);
 
-    expect(mockedAxios.get).toHaveBeenCalledWith('/pipeline/runs');
-    expect(result).toEqual(mockRuns);
+    expect(mockedAxios.get).toHaveBeenCalledWith('/pipeline/runs', {
+      params: { page: 1, limit: 10 },
+    });
+    expect(result).toEqual(mockResponse);
   });
 
   it('shouldHandleConflictError: 파이프라인 이미 실행 중(409)일 때 에러 전파', async () => {

@@ -26,6 +26,8 @@ describe('PipelineService', () => {
               findMany: jest.fn(),
               findUnique: jest.fn(),
               update: jest.fn(),
+              count: jest.fn(),
+              delete: jest.fn(),
             },
             category: {
               findMany: jest.fn(),
@@ -336,19 +338,22 @@ describe('PipelineService', () => {
       await expect(service.startPipeline()).rejects.toThrow('파이프라인이 이미 실행 중입니다.');
     });
 
-    it('shouldFindAllPipelineRuns: 실행 이력 목록을 최근순으로 반환한다', async () => {
+    it('shouldFindAllPipelineRuns: 실행 이력 목록을 페이징하여 최근순으로 반환한다', async () => {
       const mockRuns = [
         { id: 2, status: 'completed', startedAt: new Date() },
         { id: 1, status: 'completed', startedAt: new Date() },
       ];
       (prisma.pipelineRun.findMany as jest.Mock).mockResolvedValue(mockRuns);
+      (prisma.pipelineRun.count as jest.Mock).mockResolvedValue(2);
 
-      const result = await service.findAllRuns();
+      const result = await service.findAllRuns({ page: '1', limit: '10' });
 
       expect(prisma.pipelineRun.findMany).toHaveBeenCalledWith({
         orderBy: { startedAt: 'desc' },
+        skip: 0,
+        take: 10,
       });
-      expect(result).toEqual(mockRuns);
+      expect(result).toEqual({ data: mockRuns, total: 2, page: 1, limit: 10 });
     });
 
     it('shouldFindRunByIdWithNewsSummaryAndCategory: findRunById가 news에 summary와 category를 include하여 반환한다', async () => {

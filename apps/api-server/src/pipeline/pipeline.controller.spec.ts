@@ -36,8 +36,8 @@ describe('PipelineController', () => {
     });
 
     it('shouldCallFindAllPipelineRuns: GET /pipeline/runs 요청 시 service.findAllRuns를 호출한다', async () => {
-      await controller.findAllRuns();
-      expect(service.findAllRuns).toHaveBeenCalled();
+      await controller.findAllRuns({ page: '1', limit: '10' });
+      expect(service.findAllRuns).toHaveBeenCalledWith({ page: '1', limit: '10' });
     });
 
     it('shouldCallFindPipelineRunById: GET /pipeline/runs/:id 요청 시 service.findRunById를 호출한다', async () => {

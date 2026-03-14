@@ -16,50 +16,46 @@ export function PipelineHistory() {
   const { runs, setRuns } = usePipelineStore();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const loadRuns = useCallback(async () => {
+  const loadRuns = useCallback(async (p: number) => {
     try {
-      const data = await fetchPipelineRuns();
-      setRuns(data);
+      const res = await fetchPipelineRuns(p, PAGE_SIZE);
+      setRuns(res.data);
+      setTotal(res.total);
     } catch {
       // silent
     }
   }, [setRuns]);
 
   useEffect(() => {
-    loadRuns();
-  }, [loadRuns]);
+    loadRuns(page);
+  }, [loadRuns, page]);
 
   const handleDelete = useCallback(async () => {
     if (deleteTarget === null) return;
     setDeleting(true);
     try {
       await deletePipelineRun(deleteTarget);
-      setRuns(runs.filter((r) => r.id !== deleteTarget));
+      await loadRuns(page);
       setDeleteTarget(null);
     } catch {
       // silent
     } finally {
       setDeleting(false);
     }
-  }, [deleteTarget, runs, setRuns]);
+  }, [deleteTarget, loadRuns, page]);
 
-  const totalPages = Math.max(1, Math.ceil(runs.length / PAGE_SIZE));
-  const pagedRuns = runs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  // Reset page if out of bounds after delete
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
         <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
           실행 이력
-          {runs.length > 0 && <span className="text-gray-400 font-normal ml-1">({runs.length})</span>}
+          {total > 0 && <span className="text-gray-400 font-normal ml-1">({total})</span>}
         </h2>
       </div>
 
@@ -86,7 +82,7 @@ export function PipelineHistory() {
         </div>
       )}
 
-      {runs.length === 0 ? (
+      {runs.length === 0 && total === 0 ? (
         <div className="px-4 py-12 text-center">
           <p className="text-sm text-gray-400">아직 실행 이력이 없습니다</p>
           <p className="text-xs text-gray-400 mt-1">카테고리와 키워드를 설정한 후 파이프라인을 실행하세요</p>
@@ -106,7 +102,7 @@ export function PipelineHistory() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {pagedRuns.map((run) => {
+                {runs.map((run) => {
                   const status = statusLabels[run.status] ?? { text: run.status, className: 'text-gray-600 dark:text-gray-400' };
                   const isClickable = run.status === 'completed';
                   return (
@@ -149,7 +145,7 @@ export function PipelineHistory() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-800">
               <span className="text-xs text-gray-400">
-                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, runs.length)} / {runs.length}건
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} / {total}건
               </span>
               <div className="flex gap-1">
                 <button

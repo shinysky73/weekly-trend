@@ -19,8 +19,17 @@ export async function startPipeline(): Promise<{ id: number; status: string }> {
   return response.data;
 }
 
-export async function fetchPipelineRuns(): Promise<PipelineRun[]> {
-  const response = await axios.get<PipelineRun[]>('/pipeline/runs');
+export interface PipelineRunsResponse {
+  data: PipelineRun[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export async function fetchPipelineRuns(page = 1, limit = 10): Promise<PipelineRunsResponse> {
+  const response = await axios.get<PipelineRunsResponse>('/pipeline/runs', {
+    params: { page, limit },
+  });
   return response.data;
 }
 

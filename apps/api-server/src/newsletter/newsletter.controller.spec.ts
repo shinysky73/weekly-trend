@@ -54,29 +54,31 @@ describe('NewsletterController', () => {
     expect(result).toEqual(mockHistory);
   });
 
-  it('shouldRejectEmptyRecipients: recipients가 빈 배열이면 DTO 검증에서 걸린다', () => {
-    // DTO validation is handled by ValidationPipe at the framework level.
-    // Here we verify the DTO class has ArrayMinSize(1) decorator.
+  it('shouldRejectEmptyRecipients: recipients가 빈 배열이면 class-validator 검증 실패', async () => {
+    const { validate } = require('class-validator');
     const { SendNewsletterDto } = require('./dto/send-newsletter.dto');
-    const dto = new SendNewsletterDto();
-    dto.html = '<p>Test</p>';
-    dto.subject = 'Test';
-    dto.recipients = [];
+    const dto = Object.assign(new SendNewsletterDto(), {
+      html: '<p>Test</p>',
+      subject: 'Test',
+      recipients: [],
+    });
 
-    // Validation is tested via class-validator metadata presence
-    const metadata = Reflect.getMetadata('custom:validators', SendNewsletterDto.prototype, 'recipients');
-    // If this test reaches here without error, the decorator exists on the class
-    expect(dto.recipients).toEqual([]);
+    const errors = await validate(dto);
+    const recipientsError = errors.find((e: any) => e.property === 'recipients');
+    expect(recipientsError).toBeTruthy();
   });
 
-  it('shouldRejectMissingHtml: html 필드에 IsNotEmpty 데코레이터가 적용되어 있다', () => {
+  it('shouldRejectMissingHtml: html이 빈 문자열이면 class-validator 검증 실패', async () => {
+    const { validate } = require('class-validator');
     const { SendNewsletterDto } = require('./dto/send-newsletter.dto');
-    const dto = new SendNewsletterDto();
-    dto.html = '';
-    dto.subject = 'Test';
-    dto.recipients = ['a@test.com'];
+    const dto = Object.assign(new SendNewsletterDto(), {
+      html: '',
+      subject: 'Test',
+      recipients: ['a@test.com'],
+    });
 
-    // DTO has @IsNotEmpty() on html field — validated by framework ValidationPipe
-    expect(dto.html).toBe('');
+    const errors = await validate(dto);
+    const htmlError = errors.find((e: any) => e.property === 'html');
+    expect(htmlError).toBeTruthy();
   });
 });

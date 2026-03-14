@@ -5,6 +5,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -21,8 +22,8 @@ export class PipelineController {
   }
 
   @Get('runs')
-  findAllRuns() {
-    return this.pipelineService.findAllRuns();
+  findAllRuns(@Query() query: { page?: string; limit?: string }) {
+    return this.pipelineService.findAllRuns(query);
   }
 
   @Get('runs/:id')

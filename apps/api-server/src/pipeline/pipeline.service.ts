@@ -127,10 +127,21 @@ export class PipelineService {
     }
   }
 
-  async findAllRuns() {
-    return this.prisma.pipelineRun.findMany({
-      orderBy: { startedAt: 'desc' },
-    });
+  async findAllRuns(query: { page?: string; limit?: string } = {}) {
+    const page = Math.max(parseInt(query.page ?? '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(query.limit ?? '10', 10), 1), 100);
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.pipelineRun.findMany({
+        orderBy: { startedAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.pipelineRun.count(),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async deleteRun(id: number) {
