@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { RunDetailNews } from '../services/newsletterApi';
-import { formatDate } from '../../../lib/format';
+import { formatDate, getSummaryText } from '../../../lib/format';
 
 interface RunNewsCardProps {
   news: RunDetailNews;
@@ -11,7 +11,7 @@ interface RunNewsCardProps {
 
 export function RunNewsCard({ news, selected, onToggle, onDelete }: RunNewsCardProps) {
   const [imgError, setImgError] = useState(false);
-  const summaryText = news.summary?.text ?? news.snippet ?? '';
+  const summaryText = getSummaryText(news);
 
   return (
     <label className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${

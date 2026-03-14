@@ -1,7 +1,7 @@
 import type { CategoryGroup } from '../hooks/useRunDetail';
 import type { NewsletterItem } from './newsletterHtml';
 import type { CsvItem } from './newsletterApi';
-import { formatDate } from '../../../lib/format';
+import { formatDate, getSummaryText } from '../../../lib/format';
 
 export function mapSelectedToNewsletterItems(
   groups: CategoryGroup[],
@@ -14,7 +14,7 @@ export function mapSelectedToNewsletterItems(
       result.push({
         title: news.title,
         link: news.link,
-        summaryText: news.summary?.text ?? news.snippet ?? '',
+        summaryText: getSummaryText(news),
         publisher: news.publisher ?? '',
         publishedDate: formatDate(news.publishedDate),
         thumbnailUrl: news.thumbnailUrl,
@@ -23,21 +23,6 @@ export function mapSelectedToNewsletterItems(
     }
   }
   return result;
-}
-
-export function mapSelectedToCsvItems(
-  groups: CategoryGroup[],
-  selectedIds: Set<number>,
-): CsvItem[] {
-  return mapSelectedToNewsletterItems(groups, selectedIds).map((item) => ({
-    categoryName: item.categoryName,
-    keyword: '', // keyword not in NewsletterItem, add from group
-    title: item.title,
-    link: item.link,
-    summaryText: item.summaryText,
-    publisher: item.publisher,
-    publishedDate: item.publishedDate,
-  }));
 }
 
 export function mapSelectedToCsvItemsWithKeyword(
@@ -53,7 +38,7 @@ export function mapSelectedToCsvItemsWithKeyword(
         keyword: news.keyword,
         title: news.title,
         link: news.link,
-        summaryText: news.summary?.text ?? news.snippet ?? '',
+        summaryText: getSummaryText(news),
         publisher: news.publisher ?? '',
         publishedDate: formatDate(news.publishedDate),
       });

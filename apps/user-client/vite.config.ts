@@ -2,6 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+const apiTarget = process.env.API_TARGET ?? 'http://localhost:3002';
+const proxyPaths = ['/api', '/news', '/pipeline', '/categories', '/keywords', '/filter-keywords', '/newsletter'];
+const proxy = Object.fromEntries(proxyPaths.map((p) => [p, { target: apiTarget, changeOrigin: true }]));
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -12,35 +16,6 @@ export default defineConfig({
   server: {
     port: 5175,
     host: true,
-    proxy: {
-      '/api': {
-        target: process.env.API_TARGET ?? 'http://localhost:3002',
-        changeOrigin: true,
-      },
-      '/news': {
-        target: process.env.API_TARGET ?? 'http://localhost:3002',
-        changeOrigin: true,
-      },
-      '/pipeline': {
-        target: process.env.API_TARGET ?? 'http://localhost:3002',
-        changeOrigin: true,
-      },
-      '/categories': {
-        target: process.env.API_TARGET ?? 'http://localhost:3002',
-        changeOrigin: true,
-      },
-      '/keywords': {
-        target: process.env.API_TARGET ?? 'http://localhost:3002',
-        changeOrigin: true,
-      },
-      '/filter-keywords': {
-        target: process.env.API_TARGET ?? 'http://localhost:3002',
-        changeOrigin: true,
-      },
-      '/newsletter': {
-        target: process.env.API_TARGET ?? 'http://localhost:3002',
-        changeOrigin: true,
-      },
-    },
+    proxy,
   },
 });

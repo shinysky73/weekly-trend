@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
+import { APP_NAME } from '../../../lib/constants';
 
 type Mode = 'login' | 'register';
 
@@ -42,7 +43,7 @@ export function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {'주간동향 뉴스레터'}
+            {APP_NAME}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {mode === 'login' ? '로그인하여 시작하세요' : '새 계정을 만드세요'}

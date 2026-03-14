@@ -40,6 +40,10 @@ export class PipelineService {
     return { id: run.id, status: 'running' };
   }
 
+  private updateRun(runId: number, data: Record<string, any>) {
+    return this.prisma.pipelineRun.update({ where: { id: runId }, data });
+  }
+
   async executePipeline(runId: number) {
     let totalNews = 0;
 
@@ -48,14 +52,8 @@ export class PipelineService {
         include: { keywords: true, filterKeywords: true },
       });
 
-      const allKeywords = categories.flatMap((c) => c.keywords);
-      const totalKeywords = allKeywords.length;
-
-      // Set totalKeywords upfront
-      await this.prisma.pipelineRun.update({
-        where: { id: runId },
-        data: { totalKeywords },
-      });
+      const totalKeywords = categories.flatMap((c) => c.keywords).length;
+      await this.updateRun(runId, { totalKeywords });
 
       let quotaExceeded = false;
       let processedKeywords = 0;
@@ -68,12 +66,6 @@ export class PipelineService {
 
         for (const kw of category.keywords) {
           if (quotaExceeded) break;
-
-          // Update current keyword
-          await this.prisma.pipelineRun.update({
-            where: { id: runId },
-            data: { currentKeyword: `${category.name}/${kw.text}` },
-          });
 
           try {
             const results = await this.googleSearchService.search(kw.text);
@@ -92,10 +84,6 @@ export class PipelineService {
             if (error instanceof QuotaExceededException) {
               this.logger.warn(`API 할당량 초과 — 수집 중단`);
               quotaExceeded = true;
-              await this.prisma.pipelineRun.update({
-                where: { id: runId },
-                data: { quotaExceeded: true },
-              });
             } else {
               this.logger.error(
                 `[${category.name}/${kw.text}] 실패: ${(error as Error).message}`,
@@ -104,41 +92,32 @@ export class PipelineService {
           }
 
           processedKeywords++;
-          await this.prisma.pipelineRun.update({
-            where: { id: runId },
-            data: { processedKeywords },
+          await this.updateRun(runId, {
+            processedKeywords,
+            currentKeyword: `${category.name}/${kw.text}`,
+            ...(quotaExceeded ? { quotaExceeded: true } : {}),
           });
         }
       }
 
       // Summary step
-      await this.prisma.pipelineRun.update({
-        where: { id: runId },
-        data: { currentKeyword: '요약 생성 중...' },
-      });
-
+      await this.updateRun(runId, { currentKeyword: '요약 생성 중...' });
       const totalSummaries = await this.summaryService.summarizeByPipelineRun(runId);
 
-      await this.prisma.pipelineRun.update({
-        where: { id: runId },
-        data: {
-          status: 'completed',
-          totalNews,
-          totalSummaries,
-          totalKeywords,
-          currentKeyword: null,
-          completedAt: new Date(),
-        },
+      await this.updateRun(runId, {
+        status: 'completed',
+        totalNews,
+        totalSummaries,
+        totalKeywords,
+        currentKeyword: null,
+        completedAt: new Date(),
       });
     } catch (error) {
       try {
-        await this.prisma.pipelineRun.update({
-          where: { id: runId },
-          data: {
-            status: 'failed',
-            totalNews,
-            errorLog: (error as Error).message,
-          },
+        await this.updateRun(runId, {
+          status: 'failed',
+          totalNews,
+          errorLog: (error as Error).message,
         });
       } catch (updateError) {
         this.logger.error(
@@ -160,17 +139,8 @@ export class PipelineService {
       throw new NotFoundException(`PipelineRun(id=${id})을 찾을 수 없습니다.`);
     }
 
-    // Delete related summaries (via news cascade), then news, then run
-    const newsIds = await this.prisma.news.findMany({
-      where: { pipelineRunId: id },
-      select: { id: true },
-    });
-    const ids = newsIds.map((n) => n.id);
-
-    if (ids.length > 0) {
-      await this.prisma.summary.deleteMany({ where: { newsId: { in: ids } } });
-      await this.prisma.news.deleteMany({ where: { pipelineRunId: id } });
-    }
+    // News → Summary has onDelete: Cascade, so deleting news cascades to summaries
+    await this.prisma.news.deleteMany({ where: { pipelineRunId: id } });
 
     await this.prisma.pipelineRun.delete({ where: { id } });
     return { deleted: true };
