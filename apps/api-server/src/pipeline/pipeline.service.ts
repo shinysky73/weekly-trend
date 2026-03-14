@@ -124,7 +124,7 @@ export class PipelineService {
   async findRunById(id: number) {
     const run = await this.prisma.pipelineRun.findUnique({
       where: { id },
-      include: { news: true },
+      include: { news: { include: { summary: true, category: true } } },
     });
     if (!run) {
       throw new NotFoundException(`PipelineRun(id=${id})을 찾을 수 없습니다.`);

@@ -351,15 +351,19 @@ describe('PipelineService', () => {
       expect(result).toEqual(mockRuns);
     });
 
-    it('shouldFindPipelineRunByIdWithNews: id로 실행 상세를 수집된 뉴스 포함하여 반환한다', async () => {
-      const mockRun = { id: 1, status: 'completed', news: [{ id: 1, title: 'news' }] };
+    it('shouldFindRunByIdWithNewsSummaryAndCategory: findRunById가 news에 summary와 category를 include하여 반환한다', async () => {
+      const mockRun = {
+        id: 1,
+        status: 'completed',
+        news: [{ id: 1, title: 'news', summary: { text: 'summary' }, category: { id: 1, name: 'Cloud' } }],
+      };
       (prisma.pipelineRun.findUnique as jest.Mock).mockResolvedValue(mockRun);
 
       const result = await service.findRunById(1);
 
       expect(prisma.pipelineRun.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
-        include: { news: true },
+        include: { news: { include: { summary: true, category: true } } },
       });
       expect(result).toEqual(mockRun);
     });
