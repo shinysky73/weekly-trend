@@ -7,17 +7,23 @@ import * as nodemailer from 'nodemailer';
 export class NewsletterService {
   private readonly logger = new Logger(NewsletterService.name);
   private readonly transporter: nodemailer.Transporter;
+  private readonly fromAddress: string;
+  private readonly replyToAddress: string;
 
   constructor(
     private readonly prisma: PrismaService,
     configService: ConfigService,
   ) {
+    const smtpUser = configService.get<string>('SMTP_USER') ?? '';
+    this.fromAddress = configService.get<string>('SMTP_FROM') ?? smtpUser;
+    this.replyToAddress = configService.get<string>('SMTP_REPLY_TO') ?? this.fromAddress;
+
     this.transporter = nodemailer.createTransport({
       host: configService.get<string>('SMTP_HOST') ?? 'smtp.gmail.com',
       port: parseInt(configService.get<string>('SMTP_PORT') ?? '587', 10),
       secure: false,
       auth: {
-        user: configService.get<string>('SMTP_USER') ?? '',
+        user: smtpUser,
         pass: configService.get<string>('SMTP_PASS') ?? '',
       },
     });
@@ -33,7 +39,8 @@ export class NewsletterService {
 
     try {
       await this.transporter.sendMail({
-        from: this.transporter.options['auth']?.['user'] || 'noreply@weekly-trend.com',
+        from: this.fromAddress,
+        replyTo: this.replyToAddress,
         to: recipients.join(', '),
         subject,
         html,

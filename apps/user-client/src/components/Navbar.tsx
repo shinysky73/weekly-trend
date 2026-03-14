@@ -17,7 +17,7 @@ export function Navbar() {
       <div className="max-w-6xl mx-auto px-5 sm:px-8 flex items-center justify-between h-14">
         <div className="flex items-center gap-6">
           <Link to="/" className="text-sm font-semibold text-gray-900 dark:text-white">
-            {'weekly-trend'}
+            {'주간동향 뉴스레터'}
           </Link>
           <div className="flex gap-1">
             {navLinks.map((link) => (

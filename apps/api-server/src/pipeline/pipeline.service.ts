@@ -121,6 +121,28 @@ export class PipelineService {
     });
   }
 
+  async deleteRun(id: number) {
+    const run = await this.prisma.pipelineRun.findUnique({ where: { id } });
+    if (!run) {
+      throw new NotFoundException(`PipelineRun(id=${id})을 찾을 수 없습니다.`);
+    }
+
+    // Delete related summaries (via news cascade), then news, then run
+    const newsIds = await this.prisma.news.findMany({
+      where: { pipelineRunId: id },
+      select: { id: true },
+    });
+    const ids = newsIds.map((n) => n.id);
+
+    if (ids.length > 0) {
+      await this.prisma.summary.deleteMany({ where: { newsId: { in: ids } } });
+      await this.prisma.news.deleteMany({ where: { pipelineRunId: id } });
+    }
+
+    await this.prisma.pipelineRun.delete({ where: { id } });
+    return { deleted: true };
+  }
+
   async findRunById(id: number) {
     const run = await this.prisma.pipelineRun.findUnique({
       where: { id },

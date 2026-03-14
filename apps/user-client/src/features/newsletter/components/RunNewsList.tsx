@@ -5,9 +5,10 @@ import { CATEGORY_BADGE_COLOR } from '../../../lib/constants';
 
 interface RunNewsListProps {
   groups: CategoryGroup[];
+  onDeleteNews?: (id: number) => void;
 }
 
-export function RunNewsList({ groups }: RunNewsListProps) {
+export function RunNewsList({ groups, onDeleteNews }: RunNewsListProps) {
   const { selectedIds, toggleItem, selectCategory, deselectCategory } = useSelectionStore();
 
   if (groups.length === 0) {
@@ -50,6 +51,7 @@ export function RunNewsList({ groups }: RunNewsListProps) {
                   news={news}
                   selected={selectedIds.has(news.id)}
                   onToggle={toggleItem}
+                  onDelete={onDeleteNews}
                 />
               ))}
             </div>

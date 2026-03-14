@@ -19,3 +19,11 @@ export async function fetchPipelineRuns(): Promise<PipelineRun[]> {
   const response = await axios.get<PipelineRun[]>('/pipeline/runs');
   return response.data;
 }
+
+export async function deletePipelineRun(id: number): Promise<void> {
+  await axios.delete(`/pipeline/runs/${id}`);
+}
+
+export async function deleteNews(id: number): Promise<void> {
+  await axios.delete(`/news/${id}`);
+}

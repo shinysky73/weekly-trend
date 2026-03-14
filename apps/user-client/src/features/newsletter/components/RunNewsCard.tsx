@@ -6,11 +6,10 @@ interface RunNewsCardProps {
   news: RunDetailNews;
   selected: boolean;
   onToggle: (id: number) => void;
+  onDelete?: (id: number) => void;
 }
 
-const PLACEHOLDER_IMG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="%23e5e7eb"%3E%3Crect width="80" height="80"/%3E%3C/svg%3E';
-
-export function RunNewsCard({ news, selected, onToggle }: RunNewsCardProps) {
+export function RunNewsCard({ news, selected, onToggle, onDelete }: RunNewsCardProps) {
   const [imgError, setImgError] = useState(false);
   const summaryText = news.summary?.text ?? news.snippet ?? '';
 
@@ -35,15 +34,26 @@ export function RunNewsCard({ news, selected, onToggle }: RunNewsCardProps) {
         />
       )}
       <div className="flex-1 min-w-0">
-        <a
-          href={news.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 line-clamp-1"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {news.title}
-        </a>
+        <div className="flex items-start justify-between gap-2">
+          <a
+            href={news.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 line-clamp-1 flex-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {news.title}
+          </a>
+          {onDelete && (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(news.id); }}
+              className="text-xs text-gray-400 hover:text-red-500 shrink-0 transition-colors"
+              aria-label="뉴스 삭제"
+            >
+              삭제
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
           {news.publisher && <span>{news.publisher}</span>}
           {news.publisher && news.publishedDate && <span>·</span>}

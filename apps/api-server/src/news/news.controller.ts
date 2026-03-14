@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -23,5 +24,10 @@ export class NewsController {
   @Get(':id')
   findNewsById(@Param('id', ParseIntPipe) id: number) {
     return this.newsService.findNewsById(id);
+  }
+
+  @Delete(':id')
+  deleteNews(@Param('id', ParseIntPipe) id: number) {
+    return this.newsService.deleteNews(id);
   }
 }

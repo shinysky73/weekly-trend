@@ -4,6 +4,7 @@ import { useRunDetail } from './hooks/useRunDetail';
 import { useSelectionStore } from './stores/selectionStore';
 import { exportCsv } from './services/newsletterApi';
 import { mapSelectedToCsvItemsWithKeyword } from './services/mapSelectedNews';
+import { deleteNews } from '../pipeline/services/pipelineApi';
 import { RunNewsList } from './components/RunNewsList';
 import { SelectionSidebar } from './components/SelectionSidebar';
 import { NewsletterPreview } from './components/NewsletterPreview';
@@ -26,6 +27,15 @@ export function RunDetailPage() {
     const interval = setInterval(() => refetch(), 5000);
     return () => clearInterval(interval);
   }, [data?.status, refetch]);
+
+  const handleDeleteNews = useCallback(async (newsId: number) => {
+    try {
+      await deleteNews(newsId);
+      refetch();
+    } catch {
+      // silent
+    }
+  }, [refetch]);
 
   const handleExportCsv = useCallback(() => {
     const items = mapSelectedToCsvItemsWithKeyword(groupedNews, selectedIds);
@@ -102,7 +112,7 @@ export function RunDetailPage() {
 
       <div className="flex gap-6">
         <div className="flex-1 min-w-0">
-          <RunNewsList groups={groupedNews} />
+          <RunNewsList groups={groupedNews} onDeleteNews={handleDeleteNews} />
         </div>
         <div className="w-72 shrink-0 sticky top-4 self-start">
           <SelectionSidebar

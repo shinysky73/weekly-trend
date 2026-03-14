@@ -109,6 +109,12 @@ export class NewsService {
     return { data, total, page, limit };
   }
 
+  async deleteNews(id: number) {
+    // Summary has onDelete: Cascade from News, so deleting news cascades to summary
+    await this.prisma.news.delete({ where: { id } });
+    return { deleted: true };
+  }
+
   async findNewsById(id: number) {
     const news = await this.prisma.news.findUnique({
       where: { id },

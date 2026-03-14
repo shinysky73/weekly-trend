@@ -126,7 +126,7 @@ export function generateNewsletterHtml(
             <td style="background-color: #e3edff; padding: 16px 30px;">
               <table width="100%" style="border-spacing: 0;">
                 <tr>
-                  <td style="font-weight: 600; color: #5b89ff; font-size: 13px;">weekly-trend</td>
+                  <td style="font-weight: 600; color: #5b89ff; font-size: 13px;">주간동향 뉴스레터</td>
                 </tr>
               </table>
             </td>
