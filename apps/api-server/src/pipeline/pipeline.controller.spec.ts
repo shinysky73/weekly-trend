@@ -13,7 +13,7 @@ describe('PipelineController', () => {
         {
           provide: PipelineService,
           useValue: {
-            runPipeline: jest.fn(),
+            startPipeline: jest.fn(),
             findAllRuns: jest.fn(),
             findRunById: jest.fn(),
           },
@@ -30,9 +30,9 @@ describe('PipelineController', () => {
   });
 
   describe('Phase 9: Controller HTTP 계층 — Pipeline', () => {
-    it('shouldCallRunPipeline: POST /pipeline/run 요청 시 service.runPipeline을 호출한다', async () => {
-      await controller.runPipeline();
-      expect(service.runPipeline).toHaveBeenCalled();
+    it('shouldCallStartPipeline: POST /pipeline/run 요청 시 service.startPipeline을 호출한다', async () => {
+      await controller.startPipeline();
+      expect(service.startPipeline).toHaveBeenCalled();
     });
 
     it('shouldCallFindAllPipelineRuns: GET /pipeline/runs 요청 시 service.findAllRuns를 호출한다', async () => {

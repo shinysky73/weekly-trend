@@ -8,10 +8,9 @@ import { SearchResult } from './google-search.service';
 describe('NewsService', () => {
   let service: NewsService;
   let prisma: PrismaService;
-  let configService: ConfigService;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+  const createModule = (publisherBlacklist = '') =>
+    Test.createTestingModule({
       providers: [
         NewsService,
         {
@@ -29,7 +28,7 @@ describe('NewsService', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
-              if (key === 'PUBLISHER_BLACKLIST') return '';
+              if (key === 'PUBLISHER_BLACKLIST') return publisherBlacklist;
               return undefined;
             }),
           },
@@ -37,9 +36,10 @@ describe('NewsService', () => {
       ],
     }).compile();
 
+  beforeEach(async () => {
+    const module: TestingModule = await createModule();
     service = module.get<NewsService>(NewsService);
     prisma = module.get<PrismaService>(PrismaService);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   const makeResult = (overrides: Partial<SearchResult> = {}): SearchResult => ({
@@ -58,9 +58,8 @@ describe('NewsService', () => {
         makeResult({ title: 'AI 광고 뉴스', link: 'https://a.com' }),
         makeResult({ title: 'AI 기술 뉴스', link: 'https://b.com' }),
       ];
-      const filterKeywords = ['광고'];
 
-      const filtered = service.filterNews(results, filterKeywords, []);
+      const filtered = service.filterNews(results, ['광고']);
 
       expect(filtered).toHaveLength(1);
       expect(filtered[0].title).toBe('AI 기술 뉴스');
@@ -71,21 +70,23 @@ describe('NewsService', () => {
         makeResult({ snippet: '이것은 광고입니다', link: 'https://a.com' }),
         makeResult({ snippet: '기술 동향 분석', link: 'https://b.com' }),
       ];
-      const filterKeywords = ['광고'];
 
-      const filtered = service.filterNews(results, filterKeywords, []);
+      const filtered = service.filterNews(results, ['광고']);
 
       expect(filtered).toHaveLength(1);
       expect(filtered[0].snippet).toBe('기술 동향 분석');
     });
 
-    it('shouldFilterByPublisherBlacklist: 출판사 블랙리스트에 해당하는 결과를 필터링한다', () => {
+    it('shouldFilterByPublisherBlacklist: 출판사 블랙리스트에 해당하는 결과를 필터링한다', async () => {
+      const module = await createModule('이코노타임즈');
+      const svcWithBlacklist = module.get<NewsService>(NewsService);
+
       const results = [
         makeResult({ publisher: '이코노타임즈', link: 'https://a.com' }),
         makeResult({ publisher: '한국경제', link: 'https://b.com' }),
       ];
 
-      const filtered = service.filterNews(results, [], ['이코노타임즈']);
+      const filtered = svcWithBlacklist.filterNews(results, []);
 
       expect(filtered).toHaveLength(1);
       expect(filtered[0].publisher).toBe('한국경제');
@@ -97,7 +98,7 @@ describe('NewsService', () => {
         makeResult({ title: 'AI 뉴스 2', link: 'https://b.com' }),
       ];
 
-      const filtered = service.filterNews(results, [], []);
+      const filtered = service.filterNews(results, []);
 
       expect(filtered).toHaveLength(2);
     });
@@ -108,7 +109,7 @@ describe('NewsService', () => {
         makeResult({ publisher: '조선일보', link: 'https://b.com' }),
       ];
 
-      const filtered = service.filterNews(results, [], []);
+      const filtered = service.filterNews(results, []);
 
       expect(filtered).toHaveLength(2);
     });
@@ -118,9 +119,8 @@ describe('NewsService', () => {
         makeResult({ title: 'AI News about GPT', link: 'https://a.com' }),
         makeResult({ title: 'ai news about blockchain', link: 'https://b.com' }),
       ];
-      const filterKeywords = ['gpt'];
 
-      const filtered = service.filterNews(results, filterKeywords, []);
+      const filtered = service.filterNews(results, ['gpt']);
 
       expect(filtered).toHaveLength(1);
       expect(filtered[0].title).toBe('ai news about blockchain');
@@ -194,6 +194,19 @@ describe('NewsService', () => {
         }),
       );
       expect(result).toEqual({ data: mockNews, total: 10, page: 2, limit: 5 });
+    });
+
+    it('shouldClampPaginationBounds: 음수 page는 1로, limit은 1~100으로 제한한다', async () => {
+      (prisma.news.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.news.count as jest.Mock).mockResolvedValue(0);
+
+      const result = await service.findNewsPaginated({ page: '-1', limit: '999' });
+
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(100);
+      expect(prisma.news.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 0, take: 100 }),
+      );
     });
 
     it('shouldFilterNewsByCategoryId: categoryId로 필터링된 뉴스 목록을 반환한다', async () => {

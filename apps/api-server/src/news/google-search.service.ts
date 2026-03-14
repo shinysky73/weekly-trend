@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { QuotaExceededException } from './quota-exceeded.exception';
 
 export interface SearchResult {
   title: string;
   link: string;
-  snippet: string;
+  snippet: string | null;
   publishedDate: string | null;
   thumbnailUrl: string | null;
   publisher: string | null;
@@ -13,12 +13,19 @@ export interface SearchResult {
 
 @Injectable()
 export class GoogleSearchService {
+  private readonly logger = new Logger(GoogleSearchService.name);
   private readonly apiKey: string;
   private readonly cseId: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.apiKey = this.configService.get<string>('GOOGLE_CSE_API_KEY') ?? '';
-    this.cseId = this.configService.get<string>('GOOGLE_CSE_ID') ?? '';
+  constructor(configService: ConfigService) {
+    this.apiKey = configService.get<string>('GOOGLE_CSE_API_KEY') ?? '';
+    this.cseId = configService.get<string>('GOOGLE_CSE_ID') ?? '';
+
+    if (!this.apiKey || !this.cseId) {
+      this.logger.warn(
+        'GOOGLE_CSE_API_KEY 또는 GOOGLE_CSE_ID가 설정되지 않았습니다. 검색 기능이 동작하지 않습니다.',
+      );
+    }
   }
 
   async search(keyword: string): Promise<SearchResult[]> {
@@ -64,7 +71,7 @@ export class GoogleSearchService {
     return {
       title: item.title,
       link: item.link,
-      snippet: item.snippet,
+      snippet: item.snippet ?? null,
       publishedDate,
       thumbnailUrl,
       publisher,

@@ -35,7 +35,6 @@ describe('PipelineService', () => {
           useValue: {
             filterNews: jest.fn(),
             saveNews: jest.fn(),
-            publisherBlacklist: [],
           },
         },
         {
@@ -66,18 +65,27 @@ describe('PipelineService', () => {
       const mockRun = { id: 1, status: 'running' };
       (prisma.pipelineRun.create as jest.Mock).mockResolvedValue(mockRun);
       (prisma.category.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({ ...mockRun, status: 'completed' });
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
 
-      await service.runPipeline();
+      await service.startPipeline();
 
       expect(prisma.pipelineRun.create).toHaveBeenCalledWith({
         data: { status: 'running' },
       });
     });
 
-    it('shouldCollectNewsForAllCategoriesAndKeywords: 모든 카테고리의 키워드에 대해 뉴스를 수집한다', async () => {
+    it('shouldReturnRunningStatusImmediately: startPipeline은 즉시 running 상태를 반환한다', async () => {
       const mockRun = { id: 1, status: 'running' };
       (prisma.pipelineRun.create as jest.Mock).mockResolvedValue(mockRun);
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+
+      const result = await service.startPipeline();
+
+      expect(result).toEqual({ id: 1, status: 'running' });
+    });
+
+    it('shouldCollectNewsForAllCategoriesAndKeywords: 모든 카테고리의 키워드에 대해 뉴스를 수집한다', async () => {
       (prisma.category.findMany as jest.Mock).mockResolvedValue([
         {
           id: 1,
@@ -91,16 +99,34 @@ describe('PipelineService', () => {
       (newsService.saveNews as jest.Mock).mockResolvedValue(0);
       (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
 
-      await service.runPipeline();
+      await service.executePipeline(1);
 
       expect(googleSearchService.search).toHaveBeenCalledWith('GPT');
       expect(googleSearchService.search).toHaveBeenCalledWith('LLM');
       expect(googleSearchService.search).toHaveBeenCalledTimes(2);
     });
 
+    it('shouldCallFilterNewsWithFilterKeywords: filterNews를 제외 키워드와 함께 호출한다', async () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        {
+          id: 1,
+          name: 'AI',
+          keywords: [{ text: 'GPT' }],
+          filterKeywords: [{ text: '광고' }, { text: '스팸' }],
+        },
+      ]);
+      const mockResults = [{ title: 'news' }];
+      (googleSearchService.search as jest.Mock).mockResolvedValue(mockResults);
+      (newsService.filterNews as jest.Mock).mockReturnValue([]);
+      (newsService.saveNews as jest.Mock).mockResolvedValue(0);
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+
+      await service.executePipeline(1);
+
+      expect(newsService.filterNews).toHaveBeenCalledWith(mockResults, ['광고', '스팸']);
+    });
+
     it('shouldSkipCategoriesWithNoKeywords: 키워드가 0개인 카테고리는 건너뛴다', async () => {
-      const mockRun = { id: 1, status: 'running' };
-      (prisma.pipelineRun.create as jest.Mock).mockResolvedValue(mockRun);
       (prisma.category.findMany as jest.Mock).mockResolvedValue([
         { id: 1, name: 'AI', keywords: [], filterKeywords: [] },
         { id: 2, name: 'Blockchain', keywords: [{ text: 'BTC' }], filterKeywords: [] },
@@ -110,15 +136,13 @@ describe('PipelineService', () => {
       (newsService.saveNews as jest.Mock).mockResolvedValue(0);
       (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
 
-      await service.runPipeline();
+      await service.executePipeline(1);
 
       expect(googleSearchService.search).toHaveBeenCalledTimes(1);
       expect(googleSearchService.search).toHaveBeenCalledWith('BTC');
     });
 
     it('shouldUpdateStatusToCompletedOnSuccess: 수집 완료 시 status="completed", completedAt, totalNews를 기록한다', async () => {
-      const mockRun = { id: 1, status: 'running' };
-      (prisma.pipelineRun.create as jest.Mock).mockResolvedValue(mockRun);
       (prisma.category.findMany as jest.Mock).mockResolvedValue([
         { id: 1, name: 'AI', keywords: [{ text: 'GPT' }], filterKeywords: [] },
       ]);
@@ -127,7 +151,7 @@ describe('PipelineService', () => {
       (newsService.saveNews as jest.Mock).mockResolvedValue(5);
       (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
 
-      await service.runPipeline();
+      await service.executePipeline(1);
 
       expect(prisma.pipelineRun.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -140,12 +164,10 @@ describe('PipelineService', () => {
     });
 
     it('shouldUpdateStatusToFailedOnError: 수집 실패 시 status="failed", errorLog를 기록한다', async () => {
-      const mockRun = { id: 1, status: 'running' };
-      (prisma.pipelineRun.create as jest.Mock).mockResolvedValue(mockRun);
       (prisma.category.findMany as jest.Mock).mockRejectedValue(new Error('DB connection failed'));
       (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
 
-      await service.runPipeline();
+      await service.executePipeline(1);
 
       expect(prisma.pipelineRun.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -156,9 +178,14 @@ describe('PipelineService', () => {
       });
     });
 
+    it('shouldHandleUpdateFailureGracefully: 에러 경로에서 상태 업데이트 실패 시 예외를 던지지 않는다', async () => {
+      (prisma.category.findMany as jest.Mock).mockRejectedValue(new Error('DB error'));
+      (prisma.pipelineRun.update as jest.Mock).mockRejectedValue(new Error('Update also failed'));
+
+      await expect(service.executePipeline(1)).resolves.not.toThrow();
+    });
+
     it('shouldPreserveCollectedDataOnQuotaExceeded: API 429 에러 시 수집을 중단하되 이미 수집된 데이터는 유지한다', async () => {
-      const mockRun = { id: 1, status: 'running' };
-      (prisma.pipelineRun.create as jest.Mock).mockResolvedValue(mockRun);
       (prisma.category.findMany as jest.Mock).mockResolvedValue([
         { id: 1, name: 'AI', keywords: [{ text: 'GPT' }, { text: 'LLM' }], filterKeywords: [] },
       ]);
@@ -169,7 +196,7 @@ describe('PipelineService', () => {
       (newsService.saveNews as jest.Mock).mockResolvedValue(3);
       (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
 
-      await service.runPipeline();
+      await service.executePipeline(1);
 
       expect(prisma.pipelineRun.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -181,8 +208,6 @@ describe('PipelineService', () => {
     });
 
     it('shouldSkipFailedKeywordAndContinue: 개별 키워드 API 호출 실패 시 해당 키워드만 건너뛰고 계속 진행한다', async () => {
-      const mockRun = { id: 1, status: 'running' };
-      (prisma.pipelineRun.create as jest.Mock).mockResolvedValue(mockRun);
       (prisma.category.findMany as jest.Mock).mockResolvedValue([
         { id: 1, name: 'AI', keywords: [{ text: 'GPT' }, { text: 'LLM' }], filterKeywords: [] },
       ]);
@@ -193,7 +218,7 @@ describe('PipelineService', () => {
       (newsService.saveNews as jest.Mock).mockResolvedValue(2);
       (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
 
-      await service.runPipeline();
+      await service.executePipeline(1);
 
       expect(googleSearchService.search).toHaveBeenCalledTimes(2);
       expect(prisma.pipelineRun.update).toHaveBeenCalledWith({
@@ -206,12 +231,10 @@ describe('PipelineService', () => {
     });
 
     it('shouldCompleteWithZeroNewsWhenNoCategories: 카테고리가 0개이면 totalNews=0으로 completed한다', async () => {
-      const mockRun = { id: 1, status: 'running' };
-      (prisma.pipelineRun.create as jest.Mock).mockResolvedValue(mockRun);
       (prisma.category.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
 
-      await service.runPipeline();
+      await service.executePipeline(1);
 
       expect(prisma.pipelineRun.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -230,7 +253,7 @@ describe('PipelineService', () => {
         status: 'running',
       });
 
-      await expect(service.runPipeline()).rejects.toThrow('파이프라인이 이미 실행 중입니다.');
+      await expect(service.startPipeline()).rejects.toThrow('파이프라인이 이미 실행 중입니다.');
     });
 
     it('shouldFindAllPipelineRuns: 실행 이력 목록을 최근순으로 반환한다', async () => {

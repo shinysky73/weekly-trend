@@ -19,7 +19,7 @@ export class PipelineService {
     private readonly googleSearchService: GoogleSearchService,
   ) {}
 
-  async runPipeline() {
+  async startPipeline() {
     const existing = await this.prisma.pipelineRun.findFirst({
       where: { status: 'running' },
     });
@@ -31,6 +31,14 @@ export class PipelineService {
       data: { status: 'running' },
     });
 
+    this.executePipeline(run.id).catch((error) => {
+      this.logger.error(`파이프라인 실행 중 예기치 않은 에러: ${error.message}`);
+    });
+
+    return { id: run.id, status: 'running' };
+  }
+
+  async executePipeline(runId: number) {
     try {
       const categories = await this.prisma.category.findMany({
         include: { keywords: true, filterKeywords: true },
@@ -50,16 +58,12 @@ export class PipelineService {
 
           try {
             const results = await this.googleSearchService.search(kw.text);
-            const filtered = this.newsService.filterNews(
-              results,
-              filterKeywords,
-              this.newsService.publisherBlacklist,
-            );
+            const filtered = this.newsService.filterNews(results, filterKeywords);
             const saved = await this.newsService.saveNews(
               filtered,
               kw.text,
               category.id,
-              run.id,
+              runId,
             );
             totalNews += saved;
             this.logger.log(
@@ -79,25 +83,27 @@ export class PipelineService {
       }
 
       await this.prisma.pipelineRun.update({
-        where: { id: run.id },
+        where: { id: runId },
         data: {
           status: 'completed',
           totalNews,
           completedAt: new Date(),
         },
       });
-
-      return { id: run.id, status: 'completed', totalNews };
     } catch (error) {
-      await this.prisma.pipelineRun.update({
-        where: { id: run.id },
-        data: {
-          status: 'failed',
-          errorLog: (error as Error).message,
-        },
-      });
-
-      return { id: run.id, status: 'failed', error: (error as Error).message };
+      try {
+        await this.prisma.pipelineRun.update({
+          where: { id: runId },
+          data: {
+            status: 'failed',
+            errorLog: (error as Error).message,
+          },
+        });
+      } catch (updateError) {
+        this.logger.error(
+          `파이프라인 상태 업데이트 실패 (runId=${runId}): ${(updateError as Error).message}`,
+        );
+      }
     }
   }
 

@@ -5,13 +5,13 @@ import { SearchResult } from './google-search.service';
 
 @Injectable()
 export class NewsService {
-  readonly publisherBlacklist: string[];
+  private readonly publisherBlacklist: string[];
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
+    configService: ConfigService,
   ) {
-    const blacklist = this.configService.get<string>('PUBLISHER_BLACKLIST') ?? '';
+    const blacklist = configService.get<string>('PUBLISHER_BLACKLIST') ?? '';
     this.publisherBlacklist = blacklist
       .split(',')
       .map((s) => s.trim().toLowerCase())
@@ -21,10 +21,9 @@ export class NewsService {
   filterNews(
     results: SearchResult[],
     filterKeywords: string[],
-    publisherBlacklist: string[],
   ): SearchResult[] {
     const lowerKeywords = filterKeywords.map((k) => k.toLowerCase());
-    const lowerBlacklist = publisherBlacklist.map((p) => p.toLowerCase());
+    const lowerBlacklist = this.publisherBlacklist;
 
     return results.filter((item) => {
       const titleLower = item.title.toLowerCase();
@@ -78,11 +77,14 @@ export class NewsService {
     startDate?: string;
     endDate?: string;
   }) {
-    const page = parseInt(query.page ?? '1', 10);
-    const limit = parseInt(query.limit ?? '20', 10);
+    const page = Math.max(parseInt(query.page ?? '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(query.limit ?? '20', 10), 1), 100);
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: {
+      categoryId?: number;
+      createdAt?: { gte?: Date; lte?: Date };
+    } = {};
 
     if (query.categoryId) {
       where.categoryId = parseInt(query.categoryId, 10);
