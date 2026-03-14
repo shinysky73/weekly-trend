@@ -11,6 +11,19 @@ export interface SearchResult {
   publisher: string | null;
 }
 
+const NEWS_SITES = [
+  'zdnet.co.kr',
+  'www.etnews.com',
+  'www.bloter.net',
+  'www.mk.co.kr',
+  'www.chosun.com',
+  'www.hani.co.kr',
+  'www.donga.com',
+  'www.sedaily.com',
+];
+
+const SITE_QUERY = NEWS_SITES.map((s) => `site:${s}`).join(' OR ');
+
 @Injectable()
 export class GoogleSearchService {
   private readonly logger = new Logger(GoogleSearchService.name);
@@ -29,33 +42,40 @@ export class GoogleSearchService {
   }
 
   async search(keyword: string): Promise<SearchResult[]> {
-    const params = new URLSearchParams({
-      key: this.apiKey,
-      cx: this.cseId,
-      q: keyword,
-      dateRestrict: 'w1',
-      tbm: 'nws',
-      lr: 'lang_ko',
-      gl: 'kr',
-    });
+    const results: SearchResult[] = [];
 
-    const url = `https://www.googleapis.com/customsearch/v1?${params.toString()}`;
-    const response = await fetch(url);
+    for (const start of [1, 11]) {
+      const params = new URLSearchParams({
+        key: this.apiKey,
+        cx: this.cseId,
+        q: `${keyword} ${SITE_QUERY}`,
+        dateRestrict: 'w1',
+        lr: 'lang_ko',
+        gl: 'kr',
+        num: '10',
+        start: String(start),
+      });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        throw new QuotaExceededException();
+      const url = `https://www.googleapis.com/customsearch/v1?${params.toString()}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new QuotaExceededException();
+        }
+        throw new Error(`Google CSE API error: ${response.status}`);
       }
-      throw new Error(`Google CSE API error: ${response.status}`);
+
+      const data = await response.json();
+
+      if (!data.items) break;
+
+      results.push(...data.items.map((item: any) => this.extractResult(item)));
+
+      if (data.items.length < 10) break;
     }
 
-    const data = await response.json();
-
-    if (!data.items) {
-      return [];
-    }
-
-    return data.items.map((item: any) => this.extractResult(item));
+    return results;
   }
 
   private extractResult(item: any): SearchResult {

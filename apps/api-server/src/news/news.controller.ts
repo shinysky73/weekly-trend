@@ -4,11 +4,14 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { NewsService } from './news.service';
 import { NewsQueryDto } from './dto/news-query.dto';
 
 @Controller('news')
+@UseGuards(AuthGuard('jwt'))
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
