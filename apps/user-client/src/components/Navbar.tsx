@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../features/auth';
 
+const navLinks = [
+  { to: '/', label: '뉴스' },
+  { to: '/categories', label: '카테고리 관리' },
+];
+
 export function Navbar() {
   const { user, logout } = useAuthStore();
   const [showDropdown, setShowDropdown] = useState(false);
   const location = useLocation();
-
-  const navLinks = [
-    { to: '/', label: '뉴스' },
-    { to: '/categories', label: '카테고리 관리' },
-  ];
 
   return (
     <nav className="border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">

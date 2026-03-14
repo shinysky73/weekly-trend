@@ -5,7 +5,6 @@ import type { Keyword, FilterKeyword } from '../services/keywordApi';
 interface CategoryState {
   categories: Category[];
   selectedId: number | null;
-  loading: boolean;
   keywords: Keyword[];
   filterKeywords: FilterKeyword[];
   setCategories: (categories: Category[]) => void;
@@ -20,7 +19,6 @@ interface CategoryState {
 export const useCategoryStore = create<CategoryState>((set) => ({
   categories: [],
   selectedId: null,
-  loading: false,
   keywords: [],
   filterKeywords: [],
 

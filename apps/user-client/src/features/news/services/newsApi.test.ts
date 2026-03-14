@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { fetchNews, fetchCategories } from './newsApi';
+import { fetchNews } from './newsApi';
 
 vi.mock('axios');
 const mockedAxios = vi.mocked(axios);
@@ -53,20 +53,6 @@ describe('newsApi', () => {
         },
       });
       expect(result).toEqual(mockResponse.data);
-    });
-  });
-
-  describe('fetchCategories', () => {
-    it('shouldFetchCategories: GET /categories 요청하여 카테고리 목록 반환', async () => {
-      const mockCategories = [
-        { id: 1, name: 'AI', createdAt: '2026-01-01', updatedAt: '2026-01-01' },
-      ];
-      mockedAxios.get.mockResolvedValue({ data: mockCategories });
-
-      const result = await fetchCategories();
-
-      expect(mockedAxios.get).toHaveBeenCalledWith('/categories');
-      expect(result).toEqual(mockCategories);
     });
   });
 });

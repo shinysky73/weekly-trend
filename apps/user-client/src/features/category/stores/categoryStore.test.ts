@@ -11,7 +11,6 @@ describe('categoryStore', () => {
 
     expect(state.categories).toEqual([]);
     expect(state.selectedId).toBeNull();
-    expect(state.loading).toBe(false);
     expect(state.keywords).toEqual([]);
     expect(state.filterKeywords).toEqual([]);
   });

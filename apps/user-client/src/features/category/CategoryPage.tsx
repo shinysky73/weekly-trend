@@ -10,8 +10,13 @@ import { KeywordInput } from './components/KeywordInput';
 import type { Category } from './services/categoryApi';
 
 export function CategoryPage() {
-  const store = useCategoryStore();
+  const categories = useCategoryStore((s) => s.categories);
+  const selectedId = useCategoryStore((s) => s.selectedId);
+  const keywords = useCategoryStore((s) => s.keywords);
+  const filterKws = useCategoryStore((s) => s.filterKeywords);
+
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<'none' | 'create' | 'edit'>('none');
   const [editTarget, setEditTarget] = useState<Category | null>(null);
@@ -21,62 +26,68 @@ export function CategoryPage() {
     setLoading(true);
     setError(null);
     try {
-      const categories = await fetchCategories();
-      store.setCategories(categories);
+      const cats = await fetchCategories();
+      useCategoryStore.getState().setCategories(cats);
     } catch {
       setError('카테고리를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [store]);
+  }, []);
 
   const loadKeywords = useCallback(async (categoryId: number) => {
     try {
-      const [keywords, filterKws] = await Promise.all([
+      const [kws, fkws] = await Promise.all([
         fetchKeywords(categoryId),
         fetchFilterKeywords(categoryId),
       ]);
-      store.setKeywords(keywords);
-      store.setFilterKeywords(filterKws);
+      useCategoryStore.getState().setKeywords(kws);
+      useCategoryStore.getState().setFilterKeywords(fkws);
     } catch {
       setError('키워드를 불러오지 못했습니다.');
     }
-  }, [store]);
+  }, []);
 
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
 
   useEffect(() => {
-    if (store.selectedId) {
-      loadKeywords(store.selectedId);
+    if (selectedId) {
+      loadKeywords(selectedId);
     } else {
-      store.setKeywords([]);
-      store.setFilterKeywords([]);
+      useCategoryStore.getState().setKeywords([]);
+      useCategoryStore.getState().setFilterKeywords([]);
     }
-  }, [store.selectedId, loadKeywords, store]);
+  }, [selectedId, loadKeywords]);
 
   const handleCreate = async (name: string) => {
     setError(null);
+    setSubmitting(true);
     try {
       const cat = await createCategory(name);
-      store.addCategory(cat);
+      useCategoryStore.getState().addCategory(cat);
       setFormMode('none');
     } catch (err: any) {
       setError(err.response?.data?.message || '카테고리 생성에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleUpdate = async (name: string) => {
     if (!editTarget) return;
     setError(null);
+    setSubmitting(true);
     try {
       const cat = await updateCategory(editTarget.id, name);
-      store.updateCategory(cat);
+      useCategoryStore.getState().updateCategory(cat);
       setFormMode('none');
       setEditTarget(null);
     } catch (err: any) {
       setError(err.response?.data?.message || '카테고리 수정에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -85,7 +96,7 @@ export function CategoryPage() {
     setError(null);
     try {
       await deleteCategory(deleteTarget.id);
-      store.removeCategory(deleteTarget.id);
+      useCategoryStore.getState().removeCategory(deleteTarget.id);
       setDeleteTarget(null);
     } catch (err: any) {
       setError(err.response?.data?.message || '카테고리 삭제에 실패했습니다.');
@@ -93,46 +104,56 @@ export function CategoryPage() {
   };
 
   const handleAddKeyword = async (text: string) => {
-    if (!store.selectedId) return;
+    const catId = useCategoryStore.getState().selectedId;
+    if (!catId) return;
+    setSubmitting(true);
     try {
-      await createKeyword(store.selectedId, text);
-      await loadKeywords(store.selectedId);
+      await createKeyword(catId, text);
+      await loadKeywords(catId);
     } catch (err: any) {
       setError(err.response?.data?.message || '키워드 추가에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDeleteKeyword = async (id: number) => {
-    if (!store.selectedId) return;
+    const catId = useCategoryStore.getState().selectedId;
+    if (!catId) return;
     try {
       await deleteKeyword(id);
-      await loadKeywords(store.selectedId);
+      await loadKeywords(catId);
     } catch {
       setError('키워드 삭제에 실패했습니다.');
     }
   };
 
   const handleAddFilterKeyword = async (text: string) => {
-    if (!store.selectedId) return;
+    const catId = useCategoryStore.getState().selectedId;
+    if (!catId) return;
+    setSubmitting(true);
     try {
-      await createFilterKeyword(store.selectedId, text);
-      await loadKeywords(store.selectedId);
+      await createFilterKeyword(catId, text);
+      await loadKeywords(catId);
     } catch (err: any) {
       setError(err.response?.data?.message || '제외 키워드 추가에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDeleteFilterKeyword = async (id: number) => {
-    if (!store.selectedId) return;
+    const catId = useCategoryStore.getState().selectedId;
+    if (!catId) return;
     try {
       await deleteFilterKeyword(id);
-      await loadKeywords(store.selectedId);
+      await loadKeywords(catId);
     } catch {
       setError('제외 키워드 삭제에 실패했습니다.');
     }
   };
 
-  const selectedCategory = store.categories.find((c) => c.id === store.selectedId);
+  const selectedCategory = categories.find((c) => c.id === selectedId);
 
   return (
     <div className="space-y-6">
@@ -159,6 +180,7 @@ export function CategoryPage() {
           initialName={formMode === 'edit' ? editTarget?.name : ''}
           onSubmit={formMode === 'create' ? handleCreate : handleUpdate}
           onCancel={() => { setFormMode('none'); setEditTarget(null); }}
+          loading={submitting}
         />
       )}
 
@@ -207,16 +229,16 @@ export function CategoryPage() {
                   <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     키워드 — {selectedCategory.name}
                   </h2>
-                  <KeywordInput placeholder="키워드 입력" onAdd={handleAddKeyword} />
-                  <KeywordList keywords={store.keywords} onDelete={handleDeleteKeyword} />
+                  <KeywordInput placeholder="키워드 입력" onAdd={handleAddKeyword} loading={submitting} />
+                  <KeywordList keywords={keywords} onDelete={handleDeleteKeyword} />
                 </div>
 
                 <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-3">
                   <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     제외 키워드 — {selectedCategory.name}
                   </h2>
-                  <KeywordInput placeholder="제외 키워드 입력" onAdd={handleAddFilterKeyword} />
-                  <FilterKeywordList filterKeywords={store.filterKeywords} onDelete={handleDeleteFilterKeyword} />
+                  <KeywordInput placeholder="제외 키워드 입력" onAdd={handleAddFilterKeyword} loading={submitting} />
+                  <FilterKeywordList filterKeywords={filterKws} onDelete={handleDeleteFilterKeyword} />
                 </div>
               </>
             ) : (
