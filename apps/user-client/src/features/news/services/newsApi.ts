@@ -39,14 +39,5 @@ export async function fetchNews(params: FetchNewsParams = {}): Promise<NewsPagin
   return response.data;
 }
 
-export interface Category {
-  id: number;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export async function fetchCategories(): Promise<Category[]> {
-  const response = await axios.get<Category[]>('/categories');
-  return response.data;
-}
+export { fetchCategories } from '../../category/services/categoryApi';
+export type { Category } from '../../category/services/categoryApi';

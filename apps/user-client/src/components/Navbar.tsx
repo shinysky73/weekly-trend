@@ -1,17 +1,40 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../features/auth';
 
 export function Navbar() {
   const { user, logout } = useAuthStore();
   const [showDropdown, setShowDropdown] = useState(false);
+  const location = useLocation();
+
+  const navLinks = [
+    { to: '/', label: '뉴스' },
+    { to: '/categories', label: '카테고리 관리' },
+  ];
 
   return (
     <nav className="border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 flex items-center justify-between h-14">
-        <Link to="/" className="text-sm font-semibold text-gray-900 dark:text-white">
-          {'weekly-trend'}
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link to="/" className="text-sm font-semibold text-gray-900 dark:text-white">
+            {'weekly-trend'}
+          </Link>
+          <div className="flex gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  location.pathname === link.to
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </div>
 
         <div className="relative">
           <button
