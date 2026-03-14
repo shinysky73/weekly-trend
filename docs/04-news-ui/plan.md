@@ -2,7 +2,7 @@
 
 **PRD**: `docs/04-news-ui/prd.md`
 **Created**: 2026-03-14
-**Status**: In Progress
+**Status**: Complete
 
 ---
 
@@ -91,14 +91,14 @@
 - `apps/user-client/src/features/news/index.ts`
 
 ### Tasks:
-- [ ] NewsCard 컴포넌트 구현 (제목, 출처, 발행일, 요약, 썸네일)
-- [ ] 뉴스 제목 클릭 시 원문 링크 새 탭으로 열기
-- [ ] 썸네일 이미지 로드 실패 시 플레이스홀더 표시 (`onError`)
-- [ ] 긴 요약 텍스트 말줄임 처리
-- [ ] NewsList 컴포넌트 구현 (카드 그리드 레이아웃)
-- [ ] NewsFilter 컴포넌트 구현 (카테고리 선택, 날짜 범위, 키워드 검색)
-- [ ] Pagination 컴포넌트 구현
-- [ ] NewsPage 조합 (필터 + 목록 + 페이지네이션)
+- [x] NewsCard 컴포넌트 구현 (제목, 출처, 발행일, 요약, 썸네일)
+- [x] 뉴스 제목 클릭 시 원문 링크 새 탭으로 열기
+- [x] 썸네일 이미지 로드 실패 시 플레이스홀더 표시 (`onError`)
+- [x] 긴 요약 텍스트 말줄임 처리
+- [x] NewsList 컴포넌트 구현 (카드 그리드 레이아웃)
+- [x] NewsFilter 컴포넌트 구현 (카테고리 선택, 날짜 범위, 키워드 검색)
+- [x] Pagination 컴포넌트 구현
+- [x] NewsPage 조합 (필터 + 목록 + 페이지네이션)
 
 ---
 
@@ -110,10 +110,10 @@
 - `apps/user-client/src/features/pipeline/index.ts`
 
 ### Tasks:
-- [ ] PipelinePanel 컴포넌트 구현 ("파이프라인 실행" 버튼)
-- [ ] 실행 중 로딩 상태 표시 + 버튼 비활성화 (중복 클릭 방지)
-- [ ] 완료 시 수집/요약 건수 표시
-- [ ] PipelineHistory 컴포넌트 구현 (최근 실행 이력 테이블)
+- [x] PipelinePanel 컴포넌트 구현 ("파이프라인 실행" 버튼)
+- [x] 실행 중 로딩 상태 표시 + 버튼 비활성화 (중복 클릭 방지)
+- [x] 완료 시 수집/요약 건수 표시
+- [x] PipelineHistory 컴포넌트 구현 (최근 실행 이력 테이블)
 
 ---
 
@@ -125,12 +125,12 @@
 - `apps/user-client/src/pages/HomePage.tsx`
 
 ### Tasks:
-- [ ] HomePage에 NewsPage + PipelinePanel 통합
-- [ ] 빈 상태 UI: "수집된 뉴스가 없습니다"
-- [ ] 검색/필터 빈 결과: "조건에 맞는 뉴스가 없습니다"
-- [ ] 로딩 상태 UI (스켈레톤/스피너)
-- [ ] API 에러 상태 UI + 재시도 버튼
-- [ ] Navbar에 네비게이션 메뉴 필요 시 추가
+- [x] HomePage에 NewsPage + PipelinePanel 통합
+- [x] 빈 상태 UI: "수집된 뉴스가 없습니다"
+- [x] 검색/필터 빈 결과: "조건에 맞는 뉴스가 없습니다"
+- [x] 로딩 상태 UI (스켈레톤/스피너)
+- [x] API 에러 상태 UI + 재시도 버튼
+- [x] Navbar에 네비게이션 메뉴 필요 시 추가
 
 ---
 
@@ -140,8 +140,8 @@
 |---------|-------|-------|------|--------|
 | Setup | 0 | 3 | 3 | Complete |
 | Frontend Logic (TDD) | 1-4 | 17 | 17 | Complete |
-| UI/UX | 5-7 | 16 | 0 | Pending |
-| **Total** | - | **36** | **20** | **56%** |
+| UI/UX | 5-7 | 16 | 16 | Complete |
+| **Total** | - | **36** | **36** | **100%** |
 
 ---
 

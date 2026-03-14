@@ -20,6 +20,8 @@ interface NewsState {
   setPage: (page: number) => void;
   setLoading: (loading: boolean) => void;
   setNewsData: (news: NewsItem[], total: number) => void;
+  refreshKey: number;
+  refresh: () => void;
 }
 
 export const useNewsStore = create<NewsState>((set) => ({
@@ -27,10 +29,12 @@ export const useNewsStore = create<NewsState>((set) => ({
   total: 0,
   page: 1,
   loading: false,
+  refreshKey: 0,
 
   setFilters: (filters) => set({ ...filters, page: 1 }),
   resetFilters: () => set({ categoryId: undefined, startDate: undefined, endDate: undefined, page: 1 }),
   setPage: (page) => set({ page }),
   setLoading: (loading) => set({ loading }),
   setNewsData: (news, total) => set({ news, total }),
+  refresh: () => set((state) => ({ refreshKey: state.refreshKey + 1 })),
 }));
