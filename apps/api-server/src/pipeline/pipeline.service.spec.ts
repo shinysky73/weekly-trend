@@ -319,6 +319,7 @@ describe('PipelineService', () => {
         where: { id: 1 },
         data: expect.objectContaining({
           status: 'failed',
+          totalNews: 5,
           errorLog: expect.stringContaining('Summary service crashed'),
         }),
       });

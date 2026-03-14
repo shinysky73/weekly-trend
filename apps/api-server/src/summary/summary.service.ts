@@ -7,6 +7,14 @@ const MAX_INPUT_LENGTH = 8000;
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000;
 
+interface GeminiResponse {
+  text?: string;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+  };
+}
+
 @Injectable()
 export class SummaryService {
   private readonly logger = new Logger(SummaryService.name);
@@ -17,8 +25,11 @@ export class SummaryService {
     private readonly prisma: PrismaService,
     configService: ConfigService,
   ) {
-    const apiKey = configService.get<string>('GEMINI_API_KEY') ?? '';
-    this.genai = new GoogleGenAI({ apiKey });
+    const apiKey = configService.get<string>('GEMINI_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('GEMINI_API_KEY is not set. Summary service will not function.');
+    }
+    this.genai = new GoogleGenAI({ apiKey: apiKey ?? '' });
   }
 
   async summarizeNews(news: {
@@ -88,8 +99,7 @@ export class SummaryService {
   private async callGeminiWithRetry(
     title: string,
     snippet: string,
-    retries = 0,
-  ): Promise<any> {
+  ): Promise<GeminiResponse> {
     const input = `${title}\n${snippet}`;
     const truncated =
       input.length > MAX_INPUT_LENGTH
@@ -98,18 +108,28 @@ export class SummaryService {
 
     const prompt = `다음 뉴스 기사를 250자 이내의 한국어로 요약해주세요:\n\n${truncated}`;
 
-    try {
-      return await this.genai.models.generateContent({
-        model: this.model,
-        contents: prompt,
-      });
-    } catch (error: any) {
-      if (error?.status === 429 && retries < MAX_RETRIES) {
-        const delay = INITIAL_BACKOFF_MS * Math.pow(2, retries);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        return this.callGeminiWithRetry(title, snippet, retries + 1);
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await this.genai.models.generateContent({
+          model: this.model,
+          contents: prompt,
+        }) as GeminiResponse;
+      } catch (error: any) {
+        const isRateLimit =
+          error?.status === 429 ||
+          error?.statusCode === 429 ||
+          error?.code === 429;
+
+        if (isRateLimit && attempt < MAX_RETRIES) {
+          const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        throw error;
       }
-      throw error;
     }
+
+    // Unreachable, but satisfies TypeScript
+    throw new Error('Max retries exceeded');
   }
 }

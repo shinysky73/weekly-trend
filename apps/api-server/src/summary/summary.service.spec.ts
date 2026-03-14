@@ -204,8 +204,10 @@ describe('SummaryService', () => {
       await service.summarizeNews(news);
 
       const callArgs = mockGenai.models.generateContent.mock.calls[0][0];
-      // The content string should not contain the full 10000 chars
-      expect(callArgs.contents.length).toBeLessThanOrEqual(8200); // 8000 + prompt template overhead
+      // prompt template = "다음 뉴스 기사를 250자 이내의 한국어로 요약해주세요:\n\n" (~27 chars)
+      // + truncated input (8000 max) = ~8027 max
+      expect(callArgs.contents.length).toBeLessThanOrEqual(8050);
+      expect(callArgs.contents.length).toBeGreaterThan(8000);
     });
 
     it('shouldContinueOnIndividualFailure: 개별 기사 요약 실패 시 해당 기사를 건너뛰고 나머지를 계속 처리한다', async () => {

@@ -41,12 +41,13 @@ export class PipelineService {
   }
 
   async executePipeline(runId: number) {
+    let totalNews = 0;
+
     try {
       const categories = await this.prisma.category.findMany({
         include: { keywords: true, filterKeywords: true },
       });
 
-      let totalNews = 0;
       let quotaExceeded = false;
 
       for (const category of categories) {
@@ -102,6 +103,7 @@ export class PipelineService {
           where: { id: runId },
           data: {
             status: 'failed',
+            totalNews,
             errorLog: (error as Error).message,
           },
         });
