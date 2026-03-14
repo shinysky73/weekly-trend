@@ -110,7 +110,10 @@ export class NewsService {
   }
 
   async findNewsById(id: number) {
-    const news = await this.prisma.news.findUnique({ where: { id } });
+    const news = await this.prisma.news.findUnique({
+      where: { id },
+      include: { summary: { include: { meta: true } } },
+    });
     if (!news) {
       throw new NotFoundException(`뉴스(id=${id})를 찾을 수 없습니다.`);
     }

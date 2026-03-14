@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { NewsModule } from './news/news.module';
 import { PipelineModule } from './pipeline/pipeline.module';
+import { SummaryModule } from './summary/summary.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { PipelineModule } from './pipeline/pipeline.module';
     AuthModule,
     CategoryModule,
     NewsModule,
+    SummaryModule,
     PipelineModule,
   ],
   controllers: [AppController],

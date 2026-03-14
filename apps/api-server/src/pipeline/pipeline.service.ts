@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { NewsService } from '../news/news.service';
 import { GoogleSearchService } from '../news/google-search.service';
+import { SummaryService } from '../summary/summary.service';
 import { QuotaExceededException } from '../news/quota-exceeded.exception';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class PipelineService {
     private readonly prisma: PrismaService,
     private readonly newsService: NewsService,
     private readonly googleSearchService: GoogleSearchService,
+    private readonly summaryService: SummaryService,
   ) {}
 
   async startPipeline() {
@@ -82,11 +84,15 @@ export class PipelineService {
         }
       }
 
+      // Summary step
+      const totalSummaries = await this.summaryService.summarizeByPipelineRun(runId);
+
       await this.prisma.pipelineRun.update({
         where: { id: runId },
         data: {
           status: 'completed',
           totalNews,
+          totalSummaries,
           completedAt: new Date(),
         },
       });

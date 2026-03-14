@@ -249,7 +249,10 @@ describe('NewsService', () => {
 
       const result = await service.findNewsById(1);
 
-      expect(prisma.news.findUnique).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(prisma.news.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+        include: { summary: { include: { meta: true } } },
+      });
       expect(result).toEqual(mockNews);
     });
 
@@ -257,6 +260,43 @@ describe('NewsService', () => {
       (prisma.news.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.findNewsById(999)).rejects.toThrow(NotFoundException);
+    });
+
+    it('shouldIncludeSummaryInNewsDetail: 뉴스 상세 조회에 summary를 포함한다', async () => {
+      const mockNews = {
+        id: 1,
+        title: '뉴스',
+        summary: { id: 1, newsId: 1, text: '요약 텍스트' },
+      };
+      (prisma.news.findUnique as jest.Mock).mockResolvedValue(mockNews);
+
+      const result = await service.findNewsById(1);
+
+      expect(prisma.news.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+        include: { summary: { include: { meta: true } } },
+      });
+      expect((result as any).summary).toBeDefined();
+      expect((result as any).summary.text).toBe('요약 텍스트');
+    });
+
+    it('shouldIncludeSummaryMetaInNewsDetail: 뉴스 상세 조회에 summaryMeta를 포함한다', async () => {
+      const mockNews = {
+        id: 1,
+        title: '뉴스',
+        summary: {
+          id: 1,
+          newsId: 1,
+          text: '요약',
+          meta: { inputTokens: 100, outputTokens: 50, model: 'gemini-2.0-flash', processingMs: 500 },
+        },
+      };
+      (prisma.news.findUnique as jest.Mock).mockResolvedValue(mockNews);
+
+      const result = await service.findNewsById(1);
+
+      expect((result as any).summary.meta).toBeDefined();
+      expect((result as any).summary.meta.model).toBe('gemini-2.0-flash');
     });
   });
 });

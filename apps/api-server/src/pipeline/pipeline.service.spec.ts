@@ -3,6 +3,7 @@ import { PipelineService } from './pipeline.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NewsService } from '../news/news.service';
 import { GoogleSearchService } from '../news/google-search.service';
+import { SummaryService } from '../summary/summary.service';
 import { QuotaExceededException } from '../news/quota-exceeded.exception';
 
 describe('PipelineService', () => {
@@ -10,6 +11,7 @@ describe('PipelineService', () => {
   let prisma: PrismaService;
   let newsService: NewsService;
   let googleSearchService: GoogleSearchService;
+  let summaryService: SummaryService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -43,6 +45,12 @@ describe('PipelineService', () => {
             search: jest.fn(),
           },
         },
+        {
+          provide: SummaryService,
+          useValue: {
+            summarizeByPipelineRun: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -50,6 +58,7 @@ describe('PipelineService', () => {
     prisma = module.get<PrismaService>(PrismaService);
     newsService = module.get<NewsService>(NewsService);
     googleSearchService = module.get<GoogleSearchService>(GoogleSearchService);
+    summaryService = module.get<SummaryService>(SummaryService);
   });
 
   it('should be defined', () => {
@@ -59,6 +68,7 @@ describe('PipelineService', () => {
   describe('Phase 5: 파이프라인 실행 오케스트레이션', () => {
     beforeEach(() => {
       (prisma.pipelineRun.findFirst as jest.Mock).mockResolvedValue(null);
+      (summaryService.summarizeByPipelineRun as jest.Mock).mockResolvedValue(0);
     });
 
     it('shouldCreatePipelineRunWithRunningStatus: 실행 시작 시 status="running" PipelineRun 레코드를 생성한다', async () => {
@@ -241,6 +251,75 @@ describe('PipelineService', () => {
         data: expect.objectContaining({
           status: 'completed',
           totalNews: 0,
+        }),
+      });
+    });
+  });
+
+  describe('Phase 7: LLM 요약 파이프라인 통합', () => {
+    beforeEach(() => {
+      (prisma.pipelineRun.findFirst as jest.Mock).mockResolvedValue(null);
+    });
+
+    it('shouldRunSummaryAfterCollection: 파이프라인 실행 시 수집 완료 후 요약을 순차 실행한다', async () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        { id: 1, name: 'AI', keywords: [{ text: 'GPT' }], filterKeywords: [] },
+      ]);
+      (googleSearchService.search as jest.Mock).mockResolvedValue([{ title: 'news' }]);
+      (newsService.filterNews as jest.Mock).mockReturnValue([{ title: 'news' }]);
+      (newsService.saveNews as jest.Mock).mockResolvedValue(5);
+      (summaryService.summarizeByPipelineRun as jest.Mock).mockResolvedValue(3);
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+
+      await service.executePipeline(1);
+
+      expect(summaryService.summarizeByPipelineRun).toHaveBeenCalledWith(1);
+      // Verify summary was called after collection (saveNews called before summarize)
+      const saveOrder = (newsService.saveNews as jest.Mock).mock.invocationCallOrder[0];
+      const summaryOrder = (summaryService.summarizeByPipelineRun as jest.Mock).mock.invocationCallOrder[0];
+      expect(saveOrder).toBeLessThan(summaryOrder);
+    });
+
+    it('shouldRecordTotalSummaries: 파이프라인 완료 시 totalSummaries 수를 PipelineRun에 기록한다', async () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        { id: 1, name: 'AI', keywords: [{ text: 'GPT' }], filterKeywords: [] },
+      ]);
+      (googleSearchService.search as jest.Mock).mockResolvedValue([]);
+      (newsService.filterNews as jest.Mock).mockReturnValue([]);
+      (newsService.saveNews as jest.Mock).mockResolvedValue(0);
+      (summaryService.summarizeByPipelineRun as jest.Mock).mockResolvedValue(7);
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+
+      await service.executePipeline(1);
+
+      expect(prisma.pipelineRun.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: expect.objectContaining({
+          status: 'completed',
+          totalSummaries: 7,
+        }),
+      });
+    });
+
+    it('shouldFailPipelineOnSummaryError: 수집 성공 + 요약 단계 전체 실패 시 status를 "failed"로 설정하고 수집 데이터는 유지한다', async () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        { id: 1, name: 'AI', keywords: [{ text: 'GPT' }], filterKeywords: [] },
+      ]);
+      (googleSearchService.search as jest.Mock).mockResolvedValue([]);
+      (newsService.filterNews as jest.Mock).mockReturnValue([]);
+      (newsService.saveNews as jest.Mock).mockResolvedValue(5);
+      (summaryService.summarizeByPipelineRun as jest.Mock).mockRejectedValue(
+        new Error('Summary service crashed'),
+      );
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+
+      await service.executePipeline(1);
+
+      expect(prisma.pipelineRun.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: expect.objectContaining({
+          status: 'failed',
+          errorLog: expect.stringContaining('Summary service crashed'),
         }),
       });
     });

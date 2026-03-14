@@ -62,10 +62,31 @@ model News {
   collectionType  String       @default("google_cse")
   pipelineRun     PipelineRun? @relation(fields: [pipelineRunId], references: [id])
   pipelineRunId   Int?
+  summary         Summary?
   createdAt       DateTime     @default(now())
 
   @@unique([title, link])
   @@index([categoryId, createdAt])
+}
+
+model Summary {
+  id        Int          @id @default(autoincrement())
+  newsId    Int          @unique
+  news      News         @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime     @default(now())
+  meta      SummaryMeta?
+}
+
+model SummaryMeta {
+  id           Int      @id @default(autoincrement())
+  summaryId    Int      @unique
+  summary      Summary  @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+  inputTokens  Int
+  outputTokens Int
+  model        String
+  processingMs Int
+  createdAt    DateTime @default(now())
 }
 
 model PipelineRun {
