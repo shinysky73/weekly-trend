@@ -55,7 +55,9 @@
 
 ### Tests:
 - [x] shouldHaveInitialState: 초기 상태 검증 (news=[], total=0, page=1, loading=false)
-- [x] shouldSetFilters: categoryId, startDate, endDate, keyword 필터 설정
+- [x] shouldSetFilters: categoryId, startDate, endDate 필터 설정
+- [x] shouldResetPageWhenFiltersChange: 필터 변경 시 page를 1로 리셋
+- [x] shouldResetFilters: 필터 초기화 시 모든 필터와 page를 리셋
 - [x] shouldSetPage: 페이지 변경 시 상태 업데이트
 - [x] shouldSetLoading: 로딩 상태 토글
 - [x] shouldSetNewsData: 뉴스 데이터 및 total 설정
@@ -137,9 +139,9 @@
 | Section | Phase | Total | Done | Status |
 |---------|-------|-------|------|--------|
 | Setup | 0 | 3 | 3 | Complete |
-| Frontend Logic (TDD) | 1-4 | 15 | 15 | Complete |
+| Frontend Logic (TDD) | 1-4 | 17 | 17 | Complete |
 | UI/UX | 5-7 | 16 | 0 | Pending |
-| **Total** | - | **34** | **18** | **53%** |
+| **Total** | - | **36** | **20** | **56%** |
 
 ---
 

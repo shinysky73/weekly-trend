@@ -22,7 +22,7 @@ describe('pipelineApi', () => {
 
   it('shouldFetchPipelineRuns: GET /pipeline/runs 요청', async () => {
     const mockRuns = [
-      { id: 2, status: 'completed', totalNews: 10, startedAt: '2026-03-14' },
+      { id: 2, status: 'completed', totalNews: 10, totalSummaries: 5, errorLog: null, startedAt: '2026-03-14', completedAt: '2026-03-14' },
     ];
     mockedAxios.get.mockResolvedValue({ data: mockRuns });
 

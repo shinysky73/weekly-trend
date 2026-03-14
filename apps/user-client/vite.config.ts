@@ -17,6 +17,18 @@ export default defineConfig({
         target: process.env.API_TARGET ?? 'http://localhost:3002',
         changeOrigin: true,
       },
+      '/news': {
+        target: process.env.API_TARGET ?? 'http://localhost:3002',
+        changeOrigin: true,
+      },
+      '/pipeline': {
+        target: process.env.API_TARGET ?? 'http://localhost:3002',
+        changeOrigin: true,
+      },
+      '/categories': {
+        target: process.env.API_TARGET ?? 'http://localhost:3002',
+        changeOrigin: true,
+      },
     },
   },
 });

@@ -15,19 +15,41 @@ describe('newsStore', () => {
     expect(state.loading).toBe(false);
   });
 
-  it('shouldSetFilters: categoryId, startDate, endDate, keyword 필터 설정', () => {
+  it('shouldSetFilters: categoryId, startDate, endDate 필터 설정', () => {
     useNewsStore.getState().setFilters({
       categoryId: 3,
       startDate: '2026-03-01',
       endDate: '2026-03-14',
-      keyword: 'AI',
     });
 
     const state = useNewsStore.getState();
     expect(state.categoryId).toBe(3);
     expect(state.startDate).toBe('2026-03-01');
     expect(state.endDate).toBe('2026-03-14');
-    expect(state.keyword).toBe('AI');
+  });
+
+  it('shouldResetPageWhenFiltersChange: 필터 변경 시 page를 1로 리셋', () => {
+    useNewsStore.getState().setPage(5);
+    useNewsStore.getState().setFilters({ categoryId: 2 });
+
+    expect(useNewsStore.getState().page).toBe(1);
+  });
+
+  it('shouldResetFilters: 필터 초기화 시 모든 필터와 page를 리셋', () => {
+    useNewsStore.getState().setFilters({
+      categoryId: 3,
+      startDate: '2026-03-01',
+      endDate: '2026-03-14',
+    });
+    useNewsStore.getState().setPage(5);
+
+    useNewsStore.getState().resetFilters();
+
+    const state = useNewsStore.getState();
+    expect(state.categoryId).toBeUndefined();
+    expect(state.startDate).toBeUndefined();
+    expect(state.endDate).toBeUndefined();
+    expect(state.page).toBe(1);
   });
 
   it('shouldSetPage: 페이지 변경 시 상태 업데이트', () => {
