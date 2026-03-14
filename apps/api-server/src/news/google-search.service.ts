@@ -34,6 +34,9 @@ export class GoogleSearchService {
       cx: this.cseId,
       q: keyword,
       dateRestrict: 'w1',
+      tbm: 'nws',
+      lr: 'lang_ko',
+      gl: 'kr',
     });
 
     const url = `https://www.googleapis.com/customsearch/v1?${params.toString()}`;

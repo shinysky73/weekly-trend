@@ -32,10 +32,17 @@ export class CategoryService {
 
   async updateCategory(id: number, dto: UpdateCategoryDto) {
     await this.findCategoryOrThrow(id);
-    return this.prisma.category.update({
-      where: { id },
-      data: { name: dto.name },
-    });
+    try {
+      return await this.prisma.category.update({
+        where: { id },
+        data: { name: dto.name },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        throw new ConflictException(`카테고리명 '${dto.name}'이(가) 이미 존재합니다.`);
+      }
+      throw error;
+    }
   }
 
   async deleteCategory(id: number) {
@@ -60,10 +67,12 @@ export class CategoryService {
   }
 
   async findKeywordsByCategory(categoryId: number) {
+    await this.findCategoryOrThrow(categoryId);
     return this.prisma.keyword.findMany({ where: { categoryId } });
   }
 
   async deleteKeyword(id: number) {
+    await this.findKeywordOrThrow(id);
     return this.prisma.keyword.delete({ where: { id } });
   }
 
@@ -84,10 +93,12 @@ export class CategoryService {
   }
 
   async findFilterKeywordsByCategory(categoryId: number) {
+    await this.findCategoryOrThrow(categoryId);
     return this.prisma.filterKeyword.findMany({ where: { categoryId } });
   }
 
   async deleteFilterKeyword(id: number) {
+    await this.findFilterKeywordOrThrow(id);
     return this.prisma.filterKeyword.delete({ where: { id } });
   }
 
@@ -97,5 +108,21 @@ export class CategoryService {
       throw new NotFoundException(`카테고리(id=${id})를 찾을 수 없습니다.`);
     }
     return category;
+  }
+
+  private async findKeywordOrThrow(id: number) {
+    const keyword = await this.prisma.keyword.findUnique({ where: { id } });
+    if (!keyword) {
+      throw new NotFoundException(`키워드(id=${id})를 찾을 수 없습니다.`);
+    }
+    return keyword;
+  }
+
+  private async findFilterKeywordOrThrow(id: number) {
+    const filterKeyword = await this.prisma.filterKeyword.findUnique({ where: { id } });
+    if (!filterKeyword) {
+      throw new NotFoundException(`제외 키워드(id=${id})를 찾을 수 없습니다.`);
+    }
+    return filterKeyword;
   }
 }

@@ -24,11 +24,13 @@ describe('CategoryService', () => {
             keyword: {
               create: jest.fn(),
               findMany: jest.fn(),
+              findUnique: jest.fn(),
               delete: jest.fn(),
             },
             filterKeyword: {
               create: jest.fn(),
               findMany: jest.fn(),
+              findUnique: jest.fn(),
               delete: jest.fn(),
             },
           },
@@ -109,6 +111,14 @@ describe('CategoryService', () => {
       await expect(service.createCategory({ name: '인공지능' })).rejects.toThrow(ConflictException);
     });
 
+    it('shouldThrowConflictWhenUpdatingToDuplicateCategoryName: 수정 시 중복 카테고리명이면 409를 던진다', async () => {
+      (prisma.category.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
+      const prismaError = { code: 'P2002', meta: { target: ['name'] } };
+      (prisma.category.update as jest.Mock).mockRejectedValue(prismaError);
+
+      await expect(service.updateCategory(1, { name: '중복' })).rejects.toThrow(ConflictException);
+    });
+
     it('shouldThrowNotFoundWhenCategoryNotExists: 존재하지 않는 카테고리 수정 시 404 NotFoundException을 던진다', async () => {
       (prisma.category.findUnique as jest.Mock).mockResolvedValue(null);
 
@@ -138,6 +148,7 @@ describe('CategoryService', () => {
 
     it('shouldFindKeywordsByCategory: 카테고리별 키워드 목록을 반환한다', async () => {
       const mockKeywords = [{ id: 1, text: 'GPT', categoryId: 1, createdAt: new Date() }];
+      (prisma.category.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
       (prisma.keyword.findMany as jest.Mock).mockResolvedValue(mockKeywords);
 
       const result = await service.findKeywordsByCategory(1);
@@ -146,12 +157,25 @@ describe('CategoryService', () => {
       expect(result).toEqual(mockKeywords);
     });
 
+    it('shouldThrowNotFoundWhenFindKeywordsForNonExistentCategory: 존재하지 않는 카테고리의 키워드 조회 시 404를 던진다', async () => {
+      (prisma.category.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.findKeywordsByCategory(999)).rejects.toThrow(NotFoundException);
+    });
+
     it('shouldDeleteKeyword: id를 받아 키워드를 삭제한다', async () => {
+      (prisma.keyword.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
       (prisma.keyword.delete as jest.Mock).mockResolvedValue({ id: 1 });
 
       await service.deleteKeyword(1);
 
       expect(prisma.keyword.delete).toHaveBeenCalledWith({ where: { id: 1 } });
+    });
+
+    it('shouldThrowNotFoundWhenDeletingNonExistentKeyword: 존재하지 않는 키워드 삭제 시 404를 던진다', async () => {
+      (prisma.keyword.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.deleteKeyword(999)).rejects.toThrow(NotFoundException);
     });
 
     it('shouldThrowNotFoundWhenCategoryNotExistsOnKeywordCreate: 존재하지 않는 카테고리에 키워드 생성 시 404를 던진다', async () => {
@@ -185,6 +209,7 @@ describe('CategoryService', () => {
 
     it('shouldFindFilterKeywordsByCategory: 카테고리별 제외 키워드 목록을 반환한다', async () => {
       const mockFilterKeywords = [{ id: 1, text: '광고', categoryId: 1, createdAt: new Date() }];
+      (prisma.category.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
       (prisma.filterKeyword.findMany as jest.Mock).mockResolvedValue(mockFilterKeywords);
 
       const result = await service.findFilterKeywordsByCategory(1);
@@ -193,12 +218,25 @@ describe('CategoryService', () => {
       expect(result).toEqual(mockFilterKeywords);
     });
 
+    it('shouldThrowNotFoundWhenFindFilterKeywordsForNonExistentCategory: 존재하지 않는 카테고리의 제외 키워드 조회 시 404를 던진다', async () => {
+      (prisma.category.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.findFilterKeywordsByCategory(999)).rejects.toThrow(NotFoundException);
+    });
+
     it('shouldDeleteFilterKeyword: id를 받아 제외 키워드를 삭제한다', async () => {
+      (prisma.filterKeyword.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
       (prisma.filterKeyword.delete as jest.Mock).mockResolvedValue({ id: 1 });
 
       await service.deleteFilterKeyword(1);
 
       expect(prisma.filterKeyword.delete).toHaveBeenCalledWith({ where: { id: 1 } });
+    });
+
+    it('shouldThrowNotFoundWhenDeletingNonExistentFilterKeyword: 존재하지 않는 제외 키워드 삭제 시 404를 던진다', async () => {
+      (prisma.filterKeyword.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.deleteFilterKeyword(999)).rejects.toThrow(NotFoundException);
     });
 
     it('shouldThrowConflictWhenDuplicateFilterKeyword: 동일 카테고리 내 중복 제외 키워드 생성 시 409를 던진다', async () => {
