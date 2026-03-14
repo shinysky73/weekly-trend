@@ -45,3 +45,33 @@ model FilterKeyword {
 
   @@unique([categoryId, text])
 }
+
+model News {
+  id              Int          @id @default(autoincrement())
+  title           String
+  link            String
+  snippet         String?
+  content         String?
+  publisher       String?
+  publishedDate   DateTime?
+  thumbnailUrl    String?
+  keyword         String
+  categoryId      Int
+  collectionType  String       @default("google_cse")
+  pipelineRun     PipelineRun? @relation(fields: [pipelineRunId], references: [id])
+  pipelineRunId   Int?
+  createdAt       DateTime     @default(now())
+
+  @@unique([title, link])
+}
+
+model PipelineRun {
+  id             Int       @id @default(autoincrement())
+  status         String    @default("running")
+  totalNews      Int       @default(0)
+  totalSummaries Int       @default(0)
+  errorLog       String?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  news           News[]
+}
