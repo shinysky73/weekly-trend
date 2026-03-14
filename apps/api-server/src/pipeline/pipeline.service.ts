@@ -48,7 +48,17 @@ export class PipelineService {
         include: { keywords: true, filterKeywords: true },
       });
 
+      const allKeywords = categories.flatMap((c) => c.keywords);
+      const totalKeywords = allKeywords.length;
+
+      // Set totalKeywords upfront
+      await this.prisma.pipelineRun.update({
+        where: { id: runId },
+        data: { totalKeywords },
+      });
+
       let quotaExceeded = false;
+      let processedKeywords = 0;
 
       for (const category of categories) {
         if (category.keywords.length === 0) continue;
@@ -58,6 +68,12 @@ export class PipelineService {
 
         for (const kw of category.keywords) {
           if (quotaExceeded) break;
+
+          // Update current keyword
+          await this.prisma.pipelineRun.update({
+            where: { id: runId },
+            data: { currentKeyword: `${category.name}/${kw.text}` },
+          });
 
           try {
             const results = await this.googleSearchService.search(kw.text);
@@ -76,16 +92,31 @@ export class PipelineService {
             if (error instanceof QuotaExceededException) {
               this.logger.warn(`API 할당량 초과 — 수집 중단`);
               quotaExceeded = true;
+              await this.prisma.pipelineRun.update({
+                where: { id: runId },
+                data: { quotaExceeded: true },
+              });
             } else {
               this.logger.error(
                 `[${category.name}/${kw.text}] 실패: ${(error as Error).message}`,
               );
             }
           }
+
+          processedKeywords++;
+          await this.prisma.pipelineRun.update({
+            where: { id: runId },
+            data: { processedKeywords },
+          });
         }
       }
 
       // Summary step
+      await this.prisma.pipelineRun.update({
+        where: { id: runId },
+        data: { currentKeyword: '요약 생성 중...' },
+      });
+
       const totalSummaries = await this.summaryService.summarizeByPipelineRun(runId);
 
       await this.prisma.pipelineRun.update({
@@ -94,6 +125,8 @@ export class PipelineService {
           status: 'completed',
           totalNews,
           totalSummaries,
+          totalKeywords,
+          currentKeyword: null,
           completedAt: new Date(),
         },
       });

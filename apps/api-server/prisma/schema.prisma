@@ -90,14 +90,18 @@ model SummaryMeta {
 }
 
 model PipelineRun {
-  id             Int       @id @default(autoincrement())
-  status         String    @default("running")
-  totalNews      Int       @default(0)
-  totalSummaries Int       @default(0)
-  errorLog       String?
-  startedAt      DateTime  @default(now())
-  completedAt    DateTime?
-  news           News[]
+  id                Int       @id @default(autoincrement())
+  status            String    @default("running")
+  totalNews         Int       @default(0)
+  totalSummaries    Int       @default(0)
+  processedKeywords Int       @default(0)
+  totalKeywords     Int       @default(0)
+  currentKeyword    String?
+  quotaExceeded     Boolean   @default(false)
+  errorLog          String?
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+  news              News[]
 }
 
 model NewsletterSend {

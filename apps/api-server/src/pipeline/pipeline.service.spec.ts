@@ -374,4 +374,81 @@ describe('PipelineService', () => {
       await expect(service.findRunById(999)).rejects.toThrow('PipelineRun(id=999)을 찾을 수 없습니다.');
     });
   });
+
+  describe('Phase 10: 파이프라인 진행 상태 추적', () => {
+    beforeEach(() => {
+      (prisma.pipelineRun.findFirst as jest.Mock).mockResolvedValue(null);
+      (summaryService.summarizeByPipelineRun as jest.Mock).mockResolvedValue(0);
+    });
+
+    it('shouldSetTotalKeywordsOnStart: 파이프라인 시작 시 totalKeywords를 전체 키워드 수로 설정한다', async () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        { id: 1, name: 'AI', keywords: [{ text: 'GPT' }, { text: 'LLM' }], filterKeywords: [] },
+        { id: 2, name: 'Cloud', keywords: [{ text: 'AWS' }], filterKeywords: [] },
+      ]);
+      (googleSearchService.search as jest.Mock).mockResolvedValue([]);
+      (newsService.filterNews as jest.Mock).mockReturnValue([]);
+      (newsService.saveNews as jest.Mock).mockResolvedValue(0);
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+
+      await service.executePipeline(1);
+
+      // First update should set totalKeywords
+      const firstUpdate = (prisma.pipelineRun.update as jest.Mock).mock.calls[0];
+      expect(firstUpdate[0].data).toEqual(expect.objectContaining({ totalKeywords: 3 }));
+    });
+
+    it('shouldUpdateProgressPerKeyword: 키워드 처리 완료 시 processedKeywords 증가 + currentKeyword 업데이트', async () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        { id: 1, name: 'AI', keywords: [{ text: 'GPT' }, { text: 'LLM' }], filterKeywords: [] },
+      ]);
+      (googleSearchService.search as jest.Mock).mockResolvedValue([]);
+      (newsService.filterNews as jest.Mock).mockReturnValue([]);
+      (newsService.saveNews as jest.Mock).mockResolvedValue(0);
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+
+      await service.executePipeline(1);
+
+      const updateCalls = (prisma.pipelineRun.update as jest.Mock).mock.calls;
+      // Should have updates for: totalKeywords, GPT progress, LLM progress, summary step, completed
+      const progressUpdates = updateCalls.filter(
+        (c: any) => c[0].data.currentKeyword !== undefined,
+      );
+      expect(progressUpdates.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('shouldSetQuotaExceededFlag: API 할당량 초과 시 quotaExceeded=true로 기록한다', async () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        { id: 1, name: 'AI', keywords: [{ text: 'GPT' }, { text: 'LLM' }], filterKeywords: [] },
+      ]);
+      (googleSearchService.search as jest.Mock)
+        .mockResolvedValueOnce([])
+        .mockRejectedValueOnce(new QuotaExceededException());
+      (newsService.filterNews as jest.Mock).mockReturnValue([]);
+      (newsService.saveNews as jest.Mock).mockResolvedValue(0);
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+
+      await service.executePipeline(1);
+
+      const updateCalls = (prisma.pipelineRun.update as jest.Mock).mock.calls;
+      const quotaUpdate = updateCalls.find((c: any) => c[0].data.quotaExceeded === true);
+      expect(quotaUpdate).toBeTruthy();
+    });
+
+    it('shouldCompleteImmediatelyWhenNoKeywords: 키워드가 0개면 파이프라인을 즉시 완료한다', async () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        { id: 1, name: 'AI', keywords: [], filterKeywords: [] },
+      ]);
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+
+      await service.executePipeline(1);
+
+      expect(googleSearchService.search).not.toHaveBeenCalled();
+      const finalUpdate = (prisma.pipelineRun.update as jest.Mock).mock.calls.find(
+        (c: any) => c[0].data.status === 'completed',
+      );
+      expect(finalUpdate).toBeTruthy();
+      expect(finalUpdate[0].data.totalKeywords).toBe(0);
+    });
+  });
 });

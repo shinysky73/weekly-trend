@@ -5,6 +5,10 @@ export interface PipelineRun {
   status: string;
   totalNews: number;
   totalSummaries: number;
+  processedKeywords: number;
+  totalKeywords: number;
+  currentKeyword: string | null;
+  quotaExceeded: boolean;
   errorLog: string | null;
   startedAt: string;
   completedAt: string | null;
