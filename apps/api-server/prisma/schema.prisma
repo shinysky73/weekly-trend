@@ -123,10 +123,11 @@ model AppSettings {
   summaryMaxLength  Int      @default(250)
   llmModel          String   @default("gemini-2.5-flash")
   // 뉴스레터 템플릿
-  logoUrl           String?
+  logoUrl           String   @default("https://i.imgur.com/g2sVHw1.png")
+  footerLogoUrl     String   @default("https://i.imgur.com/e28WVwH.png")
   headerBgColor     String   @default("#e3edff")
   badgeColor        String   @default("#0047FF")
-  footerText        String   @default("weekly-trend")
+  footerText        String   @default("Success Companion for the Game-Changers")
   fontFamily        String   @default("Noto Sans, Arial, sans-serif")
   updatedAt         DateTime @updatedAt
 }

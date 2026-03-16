@@ -26,7 +26,7 @@ export function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const url = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const url = mode === 'login' ? '/auth/login' : '/auth/register';
       const body = mode === 'login' ? { email, password } : { email, password, name };
       const { data } = await axios.post(url, body);
       setToken(data.accessToken);

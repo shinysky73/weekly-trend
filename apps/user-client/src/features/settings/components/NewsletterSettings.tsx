@@ -2,8 +2,8 @@ import { useSettingsStore } from '../stores/settingsStore';
 
 export function NewsletterSettings() {
   const {
-    logoUrl, headerBgColor, badgeColor, footerText, fontFamily,
-    setLogoUrl, setHeaderBgColor, setBadgeColor, setFooterText, setFontFamily,
+    logoUrl, footerLogoUrl, headerBgColor, badgeColor, footerText, fontFamily,
+    setLogoUrl, setFooterLogoUrl, setHeaderBgColor, setBadgeColor, setFooterText, setFontFamily,
   } = useSettingsStore();
 
   const inputClass = 'w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-blue-500 focus:border-blue-500';
@@ -13,12 +13,24 @@ export function NewsletterSettings() {
     <div className="space-y-5">
       {/* Logo URL */}
       <div>
-        <label className={labelClass}>로고 URL</label>
+        <label className={labelClass}>헤더 로고 URL</label>
         <input
           type="text"
-          value={logoUrl ?? ''}
-          onChange={(e) => setLogoUrl(e.target.value || null)}
+          value={logoUrl}
+          onChange={(e) => setLogoUrl(e.target.value)}
           placeholder="https://example.com/logo.png"
+          className={inputClass}
+        />
+      </div>
+
+      {/* Footer Logo URL */}
+      <div>
+        <label className={labelClass}>푸터 로고 URL</label>
+        <input
+          type="text"
+          value={footerLogoUrl}
+          onChange={(e) => setFooterLogoUrl(e.target.value)}
+          placeholder="https://example.com/footer-logo.png"
           className={inputClass}
         />
       </div>

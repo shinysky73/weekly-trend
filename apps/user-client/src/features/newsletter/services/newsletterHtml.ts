@@ -25,6 +25,20 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function computePeriod(items: NewsletterItem[]): string {
+  if (items.length === 0) return '';
+  const dates = items
+    .map((i) => i.publishedDate)
+    .filter(Boolean)
+    .map((d) => new Date(d).getTime())
+    .filter((t) => !isNaN(t));
+  if (dates.length === 0) return '';
+  const min = new Date(Math.min(...dates));
+  const max = new Date(Math.max(...dates));
+  const fmt = (d: Date) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+  return `${fmt(min)} ~ ${fmt(max)}`;
+}
+
 function renderContentItem(item: NewsletterItem): string {
   const thumbnailCell = item.thumbnailUrl
     ? `<td style="width: 140px; height: 140px; text-align: center; vertical-align: top;">
@@ -75,6 +89,9 @@ export function generateNewsletterHtml(
   const footerText = t?.footerText ?? SETTINGS_DEFAULTS.footerText;
   const fontFamily = t?.fontFamily ?? SETTINGS_DEFAULTS.fontFamily;
   const logoUrl = t?.logoUrl ?? SETTINGS_DEFAULTS.logoUrl;
+  const footerLogoUrl = t?.footerLogoUrl ?? SETTINGS_DEFAULTS.footerLogoUrl;
+
+  const period = computePeriod(items);
 
   const grouped = new Map<string, NewsletterItem[]>();
   for (const item of items) {
@@ -87,8 +104,16 @@ export function generateNewsletterHtml(
     .map(([name, categoryItems]) => renderCategory(name, categoryItems, badgeColor))
     .join('\n');
 
-  const logoHtml = logoUrl
-    ? `<img src="${escapeHtml(logoUrl)}" alt="Logo" style="max-height: 40px; display: block;" />`
+  const headerLogoHtml = logoUrl
+    ? `<td align="right"><img src="${escapeHtml(logoUrl)}" alt="Logo" width="233" height="98" style="display: block; border: 0;" /></td>`
+    : '';
+
+  const footerLogoHtml = footerLogoUrl
+    ? `<td align="right"><img src="${escapeHtml(footerLogoUrl)}" alt="Footer Logo" width="51" height="23" style="display: block; border: 0;" /></td>`
+    : '';
+
+  const periodHtml = period
+    ? `<tr><td style="color: #0047ff; font-size: 13px; padding: 0 0 0 13px;">${escapeHtml(period)}</td></tr>`
     : '';
 
   const fontName = fontFamily.split(',')[0].trim();
@@ -121,13 +146,14 @@ export function generateNewsletterHtml(
                   <td style="padding: 16px 8px;">
                     <table>
                       <tr>
-                        ${logoHtml ? `<td style="padding: 0 10px;">${logoHtml}</td>` : ''}
                         <td style="font-weight: 450; font-size:27px; padding:0 0 0 10px; color: black;">
                           ${escapeHtml(options.title)}
                         </td>
                       </tr>
+                      ${periodHtml}
                     </table>
                   </td>
+                  ${headerLogoHtml}
                 </tr>
               </table>
             </td>
@@ -148,6 +174,7 @@ export function generateNewsletterHtml(
               <table width="100%" style="border-spacing: 0;">
                 <tr>
                   <td style="font-weight: 600; color: #5b89ff; font-size: 13px;">${escapeHtml(footerText)}</td>
+                  ${footerLogoHtml}
                 </tr>
               </table>
             </td>

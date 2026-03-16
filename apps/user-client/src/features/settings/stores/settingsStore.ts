@@ -18,10 +18,11 @@ export const SETTINGS_DEFAULTS: AppSettings = {
   newsSites: DEFAULT_NEWS_SITES,
   summaryMaxLength: 250,
   llmModel: 'gemini-2.5-flash',
-  logoUrl: null,
+  logoUrl: 'https://i.imgur.com/g2sVHw1.png',
+  footerLogoUrl: 'https://i.imgur.com/e28WVwH.png',
   headerBgColor: '#e3edff',
   badgeColor: '#0047FF',
-  footerText: 'weekly-trend',
+  footerText: 'Success Companion for the Game-Changers',
   fontFamily: 'Noto Sans, Arial, sans-serif',
 };
 
@@ -38,7 +39,8 @@ interface SettingsState extends AppSettings {
   setHeaderBgColor: (color: string) => void;
   setBadgeColor: (color: string) => void;
   setFooterText: (text: string) => void;
-  setLogoUrl: (url: string | null) => void;
+  setLogoUrl: (url: string) => void;
+  setFooterLogoUrl: (url: string) => void;
   setFontFamily: (font: string) => void;
   // Actions
   resetToDefaults: () => void;
@@ -68,6 +70,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setBadgeColor: (badgeColor) => set({ badgeColor }),
   setFooterText: (footerText) => set({ footerText }),
   setLogoUrl: (logoUrl) => set({ logoUrl }),
+  setFooterLogoUrl: (footerLogoUrl) => set({ footerLogoUrl }),
   setFontFamily: (fontFamily) => set({ fontFamily }),
 
   // Actions
@@ -80,6 +83,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       summaryMaxLength: settings.summaryMaxLength ?? SETTINGS_DEFAULTS.summaryMaxLength,
       llmModel: settings.llmModel ?? SETTINGS_DEFAULTS.llmModel,
       logoUrl: settings.logoUrl ?? SETTINGS_DEFAULTS.logoUrl,
+      footerLogoUrl: settings.footerLogoUrl ?? SETTINGS_DEFAULTS.footerLogoUrl,
       headerBgColor: settings.headerBgColor ?? SETTINGS_DEFAULTS.headerBgColor,
       badgeColor: settings.badgeColor ?? SETTINGS_DEFAULTS.badgeColor,
       footerText: settings.footerText ?? SETTINGS_DEFAULTS.footerText,

@@ -34,6 +34,9 @@ describe('PipelineService', () => {
             category: {
               findMany: jest.fn(),
             },
+            keyword: {
+              count: jest.fn().mockResolvedValue(5),
+            },
           },
         },
         {

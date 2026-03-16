@@ -16,7 +16,7 @@ interface NewsletterPreviewProps {
 
 export function NewsletterPreview({ groups, pipelineRunId, onBack }: NewsletterPreviewProps) {
   const { selectedIds, title, subtitle } = useSelectionStore();
-  const { logoUrl, headerBgColor, badgeColor, footerText, fontFamily } = useSettingsStore();
+  const { logoUrl, footerLogoUrl, headerBgColor, badgeColor, footerText, fontFamily } = useSettingsStore();
 
   const items = useMemo(
     () => mapSelectedToNewsletterItems(groups, selectedIds),
@@ -39,9 +39,9 @@ export function NewsletterPreview({ groups, pipelineRunId, onBack }: NewsletterP
     () => generateNewsletterHtml(items, {
       title: debouncedTitle,
       subtitle: debouncedSubtitle,
-      template: { logoUrl, headerBgColor, badgeColor, footerText, fontFamily },
+      template: { logoUrl, footerLogoUrl, headerBgColor, badgeColor, footerText, fontFamily },
     }),
-    [items, debouncedTitle, debouncedSubtitle, logoUrl, headerBgColor, badgeColor, footerText, fontFamily],
+    [items, debouncedTitle, debouncedSubtitle, logoUrl, footerLogoUrl, headerBgColor, badgeColor, footerText, fontFamily],
   );
 
   return (

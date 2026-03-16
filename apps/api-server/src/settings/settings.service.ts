@@ -20,10 +20,11 @@ export const SETTINGS_DEFAULTS = {
   newsSites: DEFAULT_NEWS_SITES,
   summaryMaxLength: 250,
   llmModel: 'gemini-2.5-flash',
-  logoUrl: null as string | null,
+  logoUrl: 'https://i.imgur.com/g2sVHw1.png',
+  footerLogoUrl: 'https://i.imgur.com/e28WVwH.png',
   headerBgColor: '#e3edff',
   badgeColor: '#0047FF',
-  footerText: 'weekly-trend',
+  footerText: 'Success Companion for the Game-Changers',
   fontFamily: 'Noto Sans, Arial, sans-serif',
 };
 
@@ -73,6 +74,7 @@ export class SettingsService {
         summaryMaxLength: dto.summaryMaxLength ?? SETTINGS_DEFAULTS.summaryMaxLength,
         llmModel: dto.llmModel ?? SETTINGS_DEFAULTS.llmModel,
         logoUrl: dto.logoUrl ?? SETTINGS_DEFAULTS.logoUrl,
+        footerLogoUrl: dto.footerLogoUrl ?? SETTINGS_DEFAULTS.footerLogoUrl,
         headerBgColor: dto.headerBgColor ?? SETTINGS_DEFAULTS.headerBgColor,
         badgeColor: dto.badgeColor ?? SETTINGS_DEFAULTS.badgeColor,
         footerText: dto.footerText ?? SETTINGS_DEFAULTS.footerText,

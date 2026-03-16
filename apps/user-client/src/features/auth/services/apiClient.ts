@@ -2,6 +2,8 @@ import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
 export function setupInterceptors() {
+  axios.defaults.baseURL = '/api';
+
   axios.interceptors.request.use((config) => {
     const token = useAuthStore.getState().token;
     if (token) {

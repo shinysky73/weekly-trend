@@ -9,7 +9,8 @@ export interface AppSettings {
   summaryMaxLength: number;
   llmModel: string;
   // 뉴스레터 템플릿
-  logoUrl: string | null;
+  logoUrl: string;
+  footerLogoUrl: string;
   headerBgColor: string;
   badgeColor: string;
   footerText: string;

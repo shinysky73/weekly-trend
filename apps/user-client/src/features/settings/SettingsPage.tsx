@@ -36,6 +36,7 @@ export function SettingsPage() {
         summaryMaxLength: s.summaryMaxLength,
         llmModel: s.llmModel,
         logoUrl: s.logoUrl,
+        footerLogoUrl: s.footerLogoUrl,
         headerBgColor: s.headerBgColor,
         badgeColor: s.badgeColor,
         footerText: s.footerText,

@@ -30,7 +30,11 @@ export class UpdateSettingsDto {
   // 뉴스레터 템플릿
   @IsOptional()
   @IsString()
-  logoUrl?: string | null;
+  logoUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  footerLogoUrl?: string;
 
   @IsOptional()
   @IsString()

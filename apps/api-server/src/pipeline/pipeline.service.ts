@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -29,6 +30,11 @@ export class PipelineService {
     });
     if (existing) {
       throw new ConflictException('파이프라인이 이미 실행 중입니다.');
+    }
+
+    const keywordCount = await this.prisma.keyword.count();
+    if (keywordCount === 0) {
+      throw new BadRequestException('등록된 키워드가 없습니다. 카테고리 관리에서 키워드를 추가하세요.');
     }
 
     const run = await this.prisma.pipelineRun.create({
