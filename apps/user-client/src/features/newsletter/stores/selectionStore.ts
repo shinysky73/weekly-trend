@@ -3,20 +3,17 @@ import { create } from 'zustand';
 interface SelectionState {
   selectedIds: Set<number>;
   title: string;
-  subtitle: string;
   toggleItem: (id: number) => void;
   selectCategory: (ids: number[]) => void;
   deselectCategory: (ids: number[]) => void;
   removeItem: (id: number) => void;
   clearAll: () => void;
   setTitle: (title: string) => void;
-  setSubtitle: (subtitle: string) => void;
 }
 
 export const useSelectionStore = create<SelectionState>((set) => ({
   selectedIds: new Set(),
-  title: '주간동향',
-  subtitle: '',
+  title: '서비스기획센터 주간동향',
 
   toggleItem: (id) =>
     set((state) => {
@@ -49,5 +46,4 @@ export const useSelectionStore = create<SelectionState>((set) => ({
 
   clearAll: () => set({ selectedIds: new Set() }),
   setTitle: (title) => set({ title }),
-  setSubtitle: (subtitle) => set({ subtitle }),
 }));

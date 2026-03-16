@@ -9,8 +9,7 @@ describe('selectionStore', () => {
   it('shouldHaveInitialState: 초기 상태 검증', () => {
     const state = useSelectionStore.getState();
     expect(state.selectedIds.size).toBe(0);
-    expect(state.title).toBe('주간동향');
-    expect(state.subtitle).toBe('');
+    expect(state.title).toBe('서비스기획센터 주간동향');
   });
 
   it('shouldToggleNewsItem: toggleItem(id)으로 뉴스 선택/해제 토글', () => {
@@ -52,14 +51,9 @@ describe('selectionStore', () => {
     expect(useSelectionStore.getState().selectedIds.size).toBe(0);
   });
 
-  it('shouldSetTitle: setTitle(title)로 뉴스레터 제목 설정', () => {
+  it('shouldSetTitle: setTitle(title)로 이메일 제목 설정', () => {
     useSelectionStore.getState().setTitle('새 제목');
     expect(useSelectionStore.getState().title).toBe('새 제목');
-  });
-
-  it('shouldSetSubtitle: setSubtitle(subtitle)로 뉴스레터 부제목 설정', () => {
-    useSelectionStore.getState().setSubtitle('부제목 테스트');
-    expect(useSelectionStore.getState().subtitle).toBe('부제목 테스트');
   });
 
   it('shouldReturnSelectedCount: 선택된 아이템 수 반환', () => {

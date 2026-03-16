@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { generateNewsletterHtml } from '../services/newsletterHtml';
 import { mapSelectedToNewsletterItems } from '../services/mapSelectedNews';
@@ -11,37 +11,27 @@ import { SendNewsletterForm } from './SendNewsletterForm';
 interface NewsletterPreviewProps {
   groups: CategoryGroup[];
   pipelineRunId?: number;
+  runDate?: string;
+  totalCollected?: number;
   onBack: () => void;
 }
 
-export function NewsletterPreview({ groups, pipelineRunId, onBack }: NewsletterPreviewProps) {
-  const { selectedIds, title, subtitle } = useSelectionStore();
-  const { logoUrl, footerLogoUrl, headerBgColor, badgeColor, footerText, fontFamily } = useSettingsStore();
+export function NewsletterPreview({ groups, pipelineRunId, runDate, totalCollected, onBack }: NewsletterPreviewProps) {
+  const { selectedIds, title } = useSelectionStore();
+  const { footerText, fontFamily, llmModel } = useSettingsStore();
 
   const items = useMemo(
     () => mapSelectedToNewsletterItems(groups, selectedIds),
     [groups, selectedIds],
   );
 
-  // Debounce title/subtitle for iframe re-rendering
-  const [debouncedTitle, setDebouncedTitle] = useState(title);
-  const [debouncedSubtitle, setDebouncedSubtitle] = useState(subtitle);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedTitle(title);
-      setDebouncedSubtitle(subtitle);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [title, subtitle]);
-
   const html = useMemo(
     () => generateNewsletterHtml(items, {
-      title: debouncedTitle,
-      subtitle: debouncedSubtitle,
-      template: { logoUrl, footerLogoUrl, headerBgColor, badgeColor, footerText, fontFamily },
+      runDate,
+      totalCollected,
+      template: { footerText, fontFamily, llmModel },
     }),
-    [items, debouncedTitle, debouncedSubtitle, logoUrl, footerLogoUrl, headerBgColor, badgeColor, footerText, fontFamily],
+    [items, runDate, totalCollected, footerText, fontFamily, llmModel],
   );
 
   return (

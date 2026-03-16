@@ -122,7 +122,7 @@ export function RunDetailPage() {
   }
 
   if (mode === 'preview') {
-    return <NewsletterPreview groups={groupedNews} pipelineRunId={runId} onBack={() => setMode('select')} />;
+    return <NewsletterPreview groups={groupedNews} pipelineRunId={runId} runDate={data?.startedAt} totalCollected={data?.totalNews} onBack={() => setMode('select')} />;
   }
 
   const filteredCount = filteredGroups.reduce((sum, g) => sum + g.news.length, 0);

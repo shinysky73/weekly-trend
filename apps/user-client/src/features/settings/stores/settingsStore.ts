@@ -23,7 +23,7 @@ export const SETTINGS_DEFAULTS: AppSettings = {
   headerBgColor: '#e3edff',
   badgeColor: '#0047FF',
   footerText: 'Success Companion for the Game-Changers',
-  fontFamily: 'Noto Sans, Arial, sans-serif',
+  fontFamily: 'Noto Sans KR, sans-serif',
 };
 
 interface SettingsState extends AppSettings {
