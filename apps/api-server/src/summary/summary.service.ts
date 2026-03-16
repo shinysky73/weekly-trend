@@ -6,6 +6,7 @@ import { GoogleGenAI } from '@google/genai';
 const MAX_INPUT_LENGTH = 8000;
 const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000;
+const CONCURRENCY = 5;
 
 interface GeminiResponse {
   text?: string;
@@ -92,12 +93,18 @@ export class SummaryService {
       where: { pipelineRunId, summary: null },
     });
 
+    const targets = newsList.filter((n) => n.snippet);
     let count = 0;
-    for (const news of newsList) {
-      if (!news.snippet) continue;
 
-      const result = await this.summarizeNews(news, options);
-      if (result) count++;
+    // Process in batches of CONCURRENCY
+    for (let i = 0; i < targets.length; i += CONCURRENCY) {
+      const batch = targets.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(
+        batch.map((news) => this.summarizeNews(news, options)),
+      );
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value) count++;
+      }
     }
 
     return count;

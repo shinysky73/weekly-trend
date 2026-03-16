@@ -102,6 +102,12 @@ Key libraries: Axios, Zustand, Tailwind CSS, React Router v7.
 - `CORS_ORIGIN`: CORS allowed origin (default: `http://localhost:5175`)
 - `PORT`: Server port (default: 3002)
 
+## Last Work Position
+
+- **Feature**: 통합 설정 페이지 + 대시보드 개선 + 뉴스레터 템플릿 (Feature 11+12)
+- **Status**: 구현 완료, 요약 병렬 처리 미커밋 1건 남음
+- **Handoff**: 상세 인수인계 문서는 `HANDOFF.md` 참고. 새 세션 시작 시 반드시 읽을 것.
+
 ## TDD Workflow
 
 This project follows Kent Beck's TDD and Tidy First principles.
