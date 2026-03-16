@@ -2,6 +2,7 @@ FROM node:20-slim
 
 WORKDIR /app
 
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 RUN npm install -g pnpm
 
 # Install dependencies (cache layer)
@@ -19,6 +20,6 @@ RUN pnpm -F @weekly-trend/api-server build
 EXPOSE 3002
 
 COPY apps/api-server/docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
 
 CMD ["/app/docker-entrypoint.sh"]
