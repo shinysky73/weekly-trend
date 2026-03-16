@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NewsService } from '../news/news.service';
 import { GoogleSearchService } from '../news/google-search.service';
 import { SummaryService } from '../summary/summary.service';
+import { SettingsService } from '../settings/settings.service';
 import { QuotaExceededException } from '../news/quota-exceeded.exception';
 
 @Injectable()
@@ -19,6 +20,7 @@ export class PipelineService {
     private readonly newsService: NewsService,
     private readonly googleSearchService: GoogleSearchService,
     private readonly summaryService: SummaryService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async startPipeline() {
@@ -48,6 +50,18 @@ export class PipelineService {
     let totalNews = 0;
 
     try {
+      // Load settings at pipeline start
+      const settings = await this.settingsService.getSettings();
+      const searchOptions = {
+        resultsPerKeyword: settings.resultsPerKeyword,
+        dateRestrict: settings.dateRestrict,
+        newsSites: settings.newsSites,
+      };
+      const summaryOptions = {
+        summaryMaxLength: settings.summaryMaxLength,
+        llmModel: settings.llmModel,
+      };
+
       const categories = await this.prisma.category.findMany({
         include: { keywords: true, filterKeywords: true },
       });
@@ -68,7 +82,7 @@ export class PipelineService {
           if (quotaExceeded) break;
 
           try {
-            const results = await this.googleSearchService.search(kw.text);
+            const results = await this.googleSearchService.search(kw.text, searchOptions);
             const filtered = this.newsService.filterNews(results, filterKeywords);
             const saved = await this.newsService.saveNews(
               filtered,
@@ -102,7 +116,7 @@ export class PipelineService {
 
       // Summary step
       await this.updateRun(runId, { currentKeyword: '요약 생성 중...' });
-      const totalSummaries = await this.summaryService.summarizeByPipelineRun(runId);
+      const totalSummaries = await this.summaryService.summarizeByPipelineRun(runId, summaryOptions);
 
       await this.updateRun(runId, {
         status: 'completed',

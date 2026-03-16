@@ -6,6 +6,7 @@ import { CategoryPage } from './features/category';
 import { Layout } from './components/Layout';
 import { HomePage } from './pages/HomePage';
 import { RunDetailPage } from './features/newsletter';
+import { SettingsPage } from './features/settings/SettingsPage';
 
 function AppContent() {
   return (
@@ -15,6 +16,7 @@ function AppContent() {
         <Route path="/" element={<HomePage />} />
         <Route path="/runs/:id" element={<RunDetailPage />} />
         <Route path="/categories" element={<CategoryPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   );

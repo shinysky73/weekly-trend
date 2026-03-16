@@ -15,11 +15,16 @@ interface GeminiResponse {
   };
 }
 
+export interface SummaryOptions {
+  summaryMaxLength?: number;
+  llmModel?: string;
+}
+
 @Injectable()
 export class SummaryService {
   private readonly logger = new Logger(SummaryService.name);
   private readonly genai: GoogleGenAI;
-  private readonly model = 'gemini-2.0-flash';
+  private readonly defaultModel = 'gemini-2.5-flash';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -32,11 +37,10 @@ export class SummaryService {
     this.genai = new GoogleGenAI({ apiKey: apiKey ?? '' });
   }
 
-  async summarizeNews(news: {
-    id: number;
-    title: string;
-    snippet?: string | null;
-  }): Promise<{ id: number; newsId: number; text: string } | null> {
+  async summarizeNews(
+    news: { id: number; title: string; snippet?: string | null },
+    options?: SummaryOptions,
+  ): Promise<{ id: number; newsId: number; text: string } | null> {
     // Skip if already summarized
     const existing = await this.prisma.summary.findUnique({
       where: { newsId: news.id },
@@ -46,9 +50,12 @@ export class SummaryService {
     // Skip if snippet is empty
     if (!news.snippet) return null;
 
+    const model = options?.llmModel ?? this.defaultModel;
+    const maxLength = options?.summaryMaxLength ?? 250;
+
     try {
       const startTime = Date.now();
-      const response = await this.callGeminiWithRetry(news.title, news.snippet);
+      const response = await this.callGeminiWithRetry(news.title, news.snippet, model, maxLength);
       const processingMs = Date.now() - startTime;
 
       const summaryText = response.text ?? '';
@@ -66,7 +73,7 @@ export class SummaryService {
           summaryId: summary.id,
           inputTokens: usage?.promptTokenCount ?? 0,
           outputTokens: usage?.candidatesTokenCount ?? 0,
-          model: this.model,
+          model,
           processingMs,
         },
       });
@@ -80,7 +87,7 @@ export class SummaryService {
     }
   }
 
-  async summarizeByPipelineRun(pipelineRunId: number): Promise<number> {
+  async summarizeByPipelineRun(pipelineRunId: number, options?: SummaryOptions): Promise<number> {
     const newsList = await this.prisma.news.findMany({
       where: { pipelineRunId, summary: null },
     });
@@ -89,7 +96,7 @@ export class SummaryService {
     for (const news of newsList) {
       if (!news.snippet) continue;
 
-      const result = await this.summarizeNews(news);
+      const result = await this.summarizeNews(news, options);
       if (result) count++;
     }
 
@@ -99,6 +106,8 @@ export class SummaryService {
   private async callGeminiWithRetry(
     title: string,
     snippet: string,
+    model: string,
+    maxLength: number,
   ): Promise<GeminiResponse> {
     const input = `${title}\n${snippet}`;
     const truncated =
@@ -106,12 +115,12 @@ export class SummaryService {
         ? input.substring(0, MAX_INPUT_LENGTH)
         : input;
 
-    const prompt = `다음 뉴스 기사를 250자 이내의 한국어로 요약해주세요:\n\n${truncated}`;
+    const prompt = `다음 뉴스 기사를 ${maxLength}자 이내의 한국어로 요약해주세요:\n\n${truncated}`;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         return await this.genai.models.generateContent({
-          model: this.model,
+          model,
           contents: prompt,
         }) as GeminiResponse;
       } catch (error: any) {

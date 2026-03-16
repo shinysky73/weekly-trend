@@ -74,7 +74,7 @@ describe('SummaryService', () => {
 
       expect(mockGenai.models.generateContent).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           contents: expect.stringContaining('AI 기술 동향'),
         }),
       );
@@ -122,7 +122,7 @@ describe('SummaryService', () => {
           summaryId: 10,
           inputTokens: 120,
           outputTokens: 60,
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           processingMs: expect.any(Number),
         }),
       });
@@ -305,6 +305,67 @@ describe('SummaryService', () => {
         expect.stringContaining('42'),
       );
       expect(result).toBeNull();
+    });
+  });
+
+  describe('Settings 연동', () => {
+    it('shouldUseCustomSummaryLength: options.summaryMaxLength=100일 때 프롬프트에 반영', async () => {
+      const news = { id: 1, title: '제목', snippet: '내용' };
+      (prisma.summary.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.summary.create as jest.Mock).mockResolvedValue({ id: 1, newsId: 1, text: '요약' });
+      (prisma.summaryMeta.create as jest.Mock).mockResolvedValue({});
+      mockGenai.models.generateContent.mockResolvedValue({
+        text: '요약',
+        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+      });
+
+      await service.summarizeNews(news, { summaryMaxLength: 100 });
+
+      expect(mockGenai.models.generateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contents: expect.stringContaining('100자'),
+        }),
+      );
+    });
+
+    it('shouldUseCustomModel: options.llmModel이 API 호출과 summaryMeta에 반영', async () => {
+      const news = { id: 1, title: '제목', snippet: '내용' };
+      (prisma.summary.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.summary.create as jest.Mock).mockResolvedValue({ id: 1, newsId: 1, text: '요약' });
+      (prisma.summaryMeta.create as jest.Mock).mockResolvedValue({});
+      mockGenai.models.generateContent.mockResolvedValue({
+        text: '요약',
+        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+      });
+
+      await service.summarizeNews(news, { llmModel: 'gemini-2.0-pro' });
+
+      expect(mockGenai.models.generateContent).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'gemini-2.0-pro' }),
+      );
+      expect(prisma.summaryMeta.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ model: 'gemini-2.0-pro' }),
+      });
+    });
+
+    it('shouldUseDefaultsWhenNoOptions: options 없으면 기존 기본값 사용', async () => {
+      const news = { id: 1, title: '제목', snippet: '내용' };
+      (prisma.summary.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.summary.create as jest.Mock).mockResolvedValue({ id: 1, newsId: 1, text: '요약' });
+      (prisma.summaryMeta.create as jest.Mock).mockResolvedValue({});
+      mockGenai.models.generateContent.mockResolvedValue({
+        text: '요약',
+        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+      });
+
+      await service.summarizeNews(news);
+
+      expect(mockGenai.models.generateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: 'gemini-2.5-flash',
+          contents: expect.stringContaining('250자'),
+        }),
+      );
     });
   });
 });

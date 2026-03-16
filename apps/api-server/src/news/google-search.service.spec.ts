@@ -243,4 +243,56 @@ describe('GoogleSearchService', () => {
       await expect(service.search('AI')).rejects.toThrow('fetch failed');
     });
   });
+
+  describe('Settings 연동', () => {
+    it('shouldUseCustomResultsPerKeyword: options.resultsPerKeyword=5일 때 num=5, 1페이지만 호출', async () => {
+      await service.search('AI', { resultsPerKeyword: 5 });
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const url = fetchSpy.mock.calls[0][0] as string;
+      expect(url).toContain('num=5');
+    });
+
+    it('shouldUseCustomDateRestrict: options.dateRestrict가 API 호출에 반영', async () => {
+      await service.search('AI', { dateRestrict: 'd3' });
+
+      const url = fetchSpy.mock.calls[0][0] as string;
+      expect(url).toContain('dateRestrict=d3');
+    });
+
+    it('shouldUseCustomNewsSites: options.newsSites 배열이 site: 쿼리에 반영', async () => {
+      await service.search('AI', { newsSites: ['custom.com', 'news.kr'] });
+
+      const url = fetchSpy.mock.calls[0][0] as string;
+      expect(url).toContain(encodeURIComponent('site:custom.com'));
+      expect(url).toContain(encodeURIComponent('site:news.kr'));
+    });
+
+    it('shouldUseDefaultsWhenNoOptions: options 없으면 기존 기본값 사용', async () => {
+      await service.search('AI');
+
+      const url = fetchSpy.mock.calls[0][0] as string;
+      expect(url).toContain('dateRestrict=w1');
+      expect(url).toContain('num=10');
+    });
+
+    it('shouldFetchTwoPagesWhenResultsPerKeyword20: resultsPerKeyword=20일 때 2페이지 호출', async () => {
+      fetchSpy.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          items: Array(10).fill({
+            title: 'News', link: 'https://example.com', snippet: 'text',
+          }),
+        }),
+      } as Response);
+
+      await service.search('AI', { resultsPerKeyword: 20 });
+
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      const url1 = fetchSpy.mock.calls[0][0] as string;
+      const url2 = fetchSpy.mock.calls[1][0] as string;
+      expect(url1).toContain('start=1');
+      expect(url2).toContain('start=11');
+    });
+  });
 });

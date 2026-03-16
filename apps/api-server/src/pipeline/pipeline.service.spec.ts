@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NewsService } from '../news/news.service';
 import { GoogleSearchService } from '../news/google-search.service';
 import { SummaryService } from '../summary/summary.service';
+import { SettingsService, SETTINGS_DEFAULTS } from '../settings/settings.service';
 import { QuotaExceededException } from '../news/quota-exceeded.exception';
 
 describe('PipelineService', () => {
@@ -12,6 +13,7 @@ describe('PipelineService', () => {
   let newsService: NewsService;
   let googleSearchService: GoogleSearchService;
   let summaryService: SummaryService;
+  let settingsService: SettingsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -53,6 +55,12 @@ describe('PipelineService', () => {
             summarizeByPipelineRun: jest.fn(),
           },
         },
+        {
+          provide: SettingsService,
+          useValue: {
+            getSettings: jest.fn().mockResolvedValue({ ...SETTINGS_DEFAULTS, updatedAt: new Date() }),
+          },
+        },
       ],
     }).compile();
 
@@ -61,6 +69,7 @@ describe('PipelineService', () => {
     newsService = module.get<NewsService>(NewsService);
     googleSearchService = module.get<GoogleSearchService>(GoogleSearchService);
     summaryService = module.get<SummaryService>(SummaryService);
+    settingsService = module.get<SettingsService>(SettingsService);
   });
 
   it('should be defined', () => {
@@ -113,8 +122,8 @@ describe('PipelineService', () => {
 
       await service.executePipeline(1);
 
-      expect(googleSearchService.search).toHaveBeenCalledWith('GPT');
-      expect(googleSearchService.search).toHaveBeenCalledWith('LLM');
+      expect(googleSearchService.search).toHaveBeenCalledWith('GPT', expect.any(Object));
+      expect(googleSearchService.search).toHaveBeenCalledWith('LLM', expect.any(Object));
       expect(googleSearchService.search).toHaveBeenCalledTimes(2);
     });
 
@@ -151,7 +160,7 @@ describe('PipelineService', () => {
       await service.executePipeline(1);
 
       expect(googleSearchService.search).toHaveBeenCalledTimes(1);
-      expect(googleSearchService.search).toHaveBeenCalledWith('BTC');
+      expect(googleSearchService.search).toHaveBeenCalledWith('BTC', expect.any(Object));
     });
 
     it('shouldUpdateStatusToCompletedOnSuccess: 수집 완료 시 status="completed", completedAt, totalNews를 기록한다', async () => {
@@ -275,7 +284,7 @@ describe('PipelineService', () => {
 
       await service.executePipeline(1);
 
-      expect(summaryService.summarizeByPipelineRun).toHaveBeenCalledWith(1);
+      expect(summaryService.summarizeByPipelineRun).toHaveBeenCalledWith(1, expect.any(Object));
       // Verify summary was called after collection (saveNews called before summarize)
       const saveOrder = (newsService.saveNews as jest.Mock).mock.invocationCallOrder[0];
       const summaryOrder = (summaryService.summarizeByPipelineRun as jest.Mock).mock.invocationCallOrder[0];
@@ -454,6 +463,66 @@ describe('PipelineService', () => {
       );
       expect(finalUpdate).toBeTruthy();
       expect(finalUpdate[0].data.totalKeywords).toBe(0);
+    });
+  });
+
+  describe('Settings 연동', () => {
+    const setupPipelineWithCategory = () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        {
+          id: 1,
+          name: 'AI',
+          keywords: [{ id: 1, text: 'AI', categoryId: 1 }],
+          filterKeywords: [],
+        },
+      ]);
+      (googleSearchService.search as jest.Mock).mockResolvedValue([]);
+      (newsService.filterNews as jest.Mock).mockReturnValue([]);
+      (newsService.saveNews as jest.Mock).mockResolvedValue(0);
+      (summaryService.summarizeByPipelineRun as jest.Mock).mockResolvedValue(0);
+      (prisma.pipelineRun.update as jest.Mock).mockResolvedValue({});
+    };
+
+    it('shouldLoadSettingsBeforePipelineExecution: executePipeline 시작 시 settingsService.getSettings() 호출', async () => {
+      setupPipelineWithCategory();
+
+      await service.executePipeline(1);
+
+      expect(settingsService.getSettings).toHaveBeenCalled();
+    });
+
+    it('shouldPassSearchOptionsToGoogleSearch: search() 호출 시 설정의 수집 파라미터 전달', async () => {
+      (settingsService.getSettings as jest.Mock).mockResolvedValue({
+        ...SETTINGS_DEFAULTS,
+        resultsPerKeyword: 5,
+        dateRestrict: 'd3',
+        newsSites: ['custom.com'],
+      });
+      setupPipelineWithCategory();
+
+      await service.executePipeline(1);
+
+      expect(googleSearchService.search).toHaveBeenCalledWith('AI', {
+        resultsPerKeyword: 5,
+        dateRestrict: 'd3',
+        newsSites: ['custom.com'],
+      });
+    });
+
+    it('shouldPassSummaryOptionsToSummaryService: summarizeByPipelineRun() 호출 시 요약 설정 전달', async () => {
+      (settingsService.getSettings as jest.Mock).mockResolvedValue({
+        ...SETTINGS_DEFAULTS,
+        summaryMaxLength: 100,
+        llmModel: 'gemini-2.0-pro',
+      });
+      setupPipelineWithCategory();
+
+      await service.executePipeline(1);
+
+      expect(summaryService.summarizeByPipelineRun).toHaveBeenCalledWith(1, {
+        summaryMaxLength: 100,
+        llmModel: 'gemini-2.0-pro',
+      });
     });
   });
 });

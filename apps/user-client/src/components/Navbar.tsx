@@ -6,6 +6,7 @@ import { APP_NAME } from '../lib/constants';
 const navLinks = [
   { to: '/', label: '뉴스' },
   { to: '/categories', label: '카테고리 관리' },
+  { to: '/settings', label: '설정' },
 ];
 
 export function Navbar() {

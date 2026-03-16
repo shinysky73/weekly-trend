@@ -1,4 +1,5 @@
-import { CATEGORY_BADGE_COLOR, APP_NAME } from '../../../lib/constants';
+import { SETTINGS_DEFAULTS } from '../../settings/stores/settingsStore';
+import type { AppSettings } from '../../settings/services/settingsApi';
 
 export interface NewsletterItem {
   title: string;
@@ -13,6 +14,7 @@ export interface NewsletterItem {
 interface NewsletterOptions {
   title: string;
   subtitle: string;
+  template?: Partial<AppSettings>;
 }
 
 function escapeHtml(str: string): string {
@@ -50,12 +52,12 @@ function renderContentItem(item: NewsletterItem): string {
 </tr>`;
 }
 
-function renderCategory(categoryName: string, items: NewsletterItem[]): string {
+function renderCategory(categoryName: string, items: NewsletterItem[], badgeColor: string): string {
   const contents = items.map(renderContentItem).join('\n');
 
   return `<table width="100%" style="border-spacing: 0; margin-bottom: 15px;">
   <tr>
-    <td style="background-color:${CATEGORY_BADGE_COLOR};padding:0.5em 1.7em;border-radius:10em;display:inline-flex;justify-content:center;align-items:center;">
+    <td style="background-color:${badgeColor};padding:0.5em 1.7em;border-radius:10em;display:inline-flex;justify-content:center;align-items:center;">
       <p style="font-weight:600;font-size:1.5em;color:white;text-align:center;margin:5px 7px;line-height:1;">${escapeHtml(categoryName)}</p>
     </td>
   </tr>
@@ -67,6 +69,13 @@ export function generateNewsletterHtml(
   items: NewsletterItem[],
   options: NewsletterOptions,
 ): string {
+  const t = options.template;
+  const headerBgColor = t?.headerBgColor ?? SETTINGS_DEFAULTS.headerBgColor;
+  const badgeColor = t?.badgeColor ?? SETTINGS_DEFAULTS.badgeColor;
+  const footerText = t?.footerText ?? SETTINGS_DEFAULTS.footerText;
+  const fontFamily = t?.fontFamily ?? SETTINGS_DEFAULTS.fontFamily;
+  const logoUrl = t?.logoUrl ?? SETTINGS_DEFAULTS.logoUrl;
+
   const grouped = new Map<string, NewsletterItem[]>();
   for (const item of items) {
     const list = grouped.get(item.categoryName) ?? [];
@@ -75,8 +84,19 @@ export function generateNewsletterHtml(
   }
 
   const categoryHtml = Array.from(grouped.entries())
-    .map(([name, categoryItems]) => renderCategory(name, categoryItems))
+    .map(([name, categoryItems]) => renderCategory(name, categoryItems, badgeColor))
     .join('\n');
+
+  const logoHtml = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="Logo" style="max-height: 40px; display: block;" />`
+    : '';
+
+  const fontName = fontFamily.split(',')[0].trim();
+  const fontImport = fontName === 'Noto Sans'
+    ? `@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@100..900&display=swap');`
+    : fontName !== 'Arial'
+      ? `@import url('https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@100..900&display=swap');`
+      : '';
 
   return `<!DOCTYPE html>
 <html>
@@ -85,8 +105,8 @@ export function generateNewsletterHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Preview</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@100..900&display=swap');
-    body { font-family: 'Noto Sans', Arial, sans-serif; color: #333333; }
+    ${fontImport}
+    body { font-family: ${fontFamily}; color: #333333; }
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #ffffff;">
@@ -95,12 +115,13 @@ export function generateNewsletterHtml(
       <td align="center" style="padding: 0;">
         <table width="600" style="border-spacing: 0; max-width: 600px; min-width: 600px; background-color: #f9fbff;">
           <tr>
-            <td style="background-color: #e3edff; padding: 0;">
+            <td style="background-color: ${headerBgColor}; padding: 0;">
               <table width="100%" style="border-spacing: 0;">
                 <tr>
                   <td style="padding: 16px 8px;">
                     <table>
                       <tr>
+                        ${logoHtml ? `<td style="padding: 0 10px;">${logoHtml}</td>` : ''}
                         <td style="font-weight: 450; font-size:27px; padding:0 0 0 10px; color: black;">
                           ${escapeHtml(options.title)}
                         </td>
@@ -123,10 +144,10 @@ export function generateNewsletterHtml(
           </tr>
           <tr><td style="height: 40px;"></td></tr>
           <tr>
-            <td style="background-color: #e3edff; padding: 16px 30px;">
+            <td style="background-color: ${headerBgColor}; padding: 16px 30px;">
               <table width="100%" style="border-spacing: 0;">
                 <tr>
-                  <td style="font-weight: 600; color: #5b89ff; font-size: 13px;">${APP_NAME}</td>
+                  <td style="font-weight: 600; color: #5b89ff; font-size: 13px;">${escapeHtml(footerText)}</td>
                 </tr>
               </table>
             </td>

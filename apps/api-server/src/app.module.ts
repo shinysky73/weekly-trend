@@ -9,6 +9,7 @@ import { NewsModule } from './news/news.module';
 import { PipelineModule } from './pipeline/pipeline.module';
 import { SummaryModule } from './summary/summary.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
     SummaryModule,
     PipelineModule,
     NewsletterModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

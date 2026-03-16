@@ -1,7 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { generateNewsletterHtml } from '../services/newsletterHtml';
 import { mapSelectedToNewsletterItems } from '../services/mapSelectedNews';
 import { useSelectionStore } from '../stores/selectionStore';
+import { useSettingsStore } from '../../settings/stores/settingsStore';
 import type { CategoryGroup } from '../hooks/useRunDetail';
 import { NewsletterHeader } from './NewsletterHeader';
 import { SendNewsletterForm } from './SendNewsletterForm';
@@ -14,6 +16,7 @@ interface NewsletterPreviewProps {
 
 export function NewsletterPreview({ groups, pipelineRunId, onBack }: NewsletterPreviewProps) {
   const { selectedIds, title, subtitle } = useSelectionStore();
+  const { logoUrl, headerBgColor, badgeColor, footerText, fontFamily } = useSettingsStore();
 
   const items = useMemo(
     () => mapSelectedToNewsletterItems(groups, selectedIds),
@@ -33,8 +36,12 @@ export function NewsletterPreview({ groups, pipelineRunId, onBack }: NewsletterP
   }, [title, subtitle]);
 
   const html = useMemo(
-    () => generateNewsletterHtml(items, { title: debouncedTitle, subtitle: debouncedSubtitle }),
-    [items, debouncedTitle, debouncedSubtitle],
+    () => generateNewsletterHtml(items, {
+      title: debouncedTitle,
+      subtitle: debouncedSubtitle,
+      template: { logoUrl, headerBgColor, badgeColor, footerText, fontFamily },
+    }),
+    [items, debouncedTitle, debouncedSubtitle, logoUrl, headerBgColor, badgeColor, footerText, fontFamily],
   );
 
   return (
@@ -46,7 +53,15 @@ export function NewsletterPreview({ groups, pipelineRunId, onBack }: NewsletterP
         >
           ← 선택으로 돌아가기
         </button>
-        <span className="text-xs text-gray-400">{items.length}건 선택됨</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">{items.length}건 선택됨</span>
+          <Link
+            to="/settings"
+            className="text-sm px-2.5 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
+          >
+            템플릿 설정
+          </Link>
+        </div>
       </div>
 
       <NewsletterHeader />

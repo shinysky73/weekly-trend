@@ -50,6 +50,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.newsletterSend;
   }
 
+  get appSettings() {
+    return this.client.appSettings;
+  }
+
   get $transaction() {
     return this.client.$transaction.bind(this.client);
   }

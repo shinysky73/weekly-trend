@@ -288,7 +288,7 @@ describe('NewsService', () => {
           id: 1,
           newsId: 1,
           text: '요약',
-          meta: { inputTokens: 100, outputTokens: 50, model: 'gemini-2.0-flash', processingMs: 500 },
+          meta: { inputTokens: 100, outputTokens: 50, model: 'gemini-2.5-flash', processingMs: 500 },
         },
       };
       (prisma.news.findUnique as jest.Mock).mockResolvedValue(mockNews);
@@ -296,7 +296,7 @@ describe('NewsService', () => {
       const result = await service.findNewsById(1);
 
       expect((result as any).summary.meta).toBeDefined();
-      expect((result as any).summary.meta.model).toBe('gemini-2.0-flash');
+      expect((result as any).summary.meta.model).toBe('gemini-2.5-flash');
     });
   });
 });

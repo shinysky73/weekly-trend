@@ -11,7 +11,13 @@ export interface SearchResult {
   publisher: string | null;
 }
 
-const NEWS_SITES = [
+export interface SearchOptions {
+  resultsPerKeyword?: number;
+  dateRestrict?: string;
+  newsSites?: string[];
+}
+
+const DEFAULT_NEWS_SITES = [
   'zdnet.co.kr',
   'www.etnews.com',
   'www.bloter.net',
@@ -21,8 +27,6 @@ const NEWS_SITES = [
   'www.donga.com',
   'www.sedaily.com',
 ];
-
-const SITE_QUERY = NEWS_SITES.map((s) => `site:${s}`).join(' OR ');
 
 @Injectable()
 export class GoogleSearchService {
@@ -41,18 +45,28 @@ export class GoogleSearchService {
     }
   }
 
-  async search(keyword: string): Promise<SearchResult[]> {
+  async search(keyword: string, options?: SearchOptions): Promise<SearchResult[]> {
+    const resultsPerKeyword = options?.resultsPerKeyword ?? 20;
+    const dateRestrict = options?.dateRestrict ?? 'w1';
+    const sites = options?.newsSites ?? DEFAULT_NEWS_SITES;
+    const siteQuery = sites.map((s) => `site:${s}`).join(' OR ');
+
     const results: SearchResult[] = [];
 
-    for (const start of [1, 11]) {
+    // Calculate pagination: num per page (max 10), number of pages needed
+    const numPerPage = Math.min(resultsPerKeyword, 10);
+    const pages = Math.ceil(resultsPerKeyword / 10);
+    const startOffsets = Array.from({ length: pages }, (_, i) => i * 10 + 1);
+
+    for (const start of startOffsets) {
       const params = new URLSearchParams({
         key: this.apiKey,
         cx: this.cseId,
-        q: `${keyword} ${SITE_QUERY}`,
-        dateRestrict: 'w1',
+        q: `${keyword} ${siteQuery}`,
+        dateRestrict,
         lr: 'lang_ko',
         gl: 'kr',
-        num: '10',
+        num: String(numPerPage),
         start: String(start),
       });
 
@@ -72,7 +86,7 @@ export class GoogleSearchService {
 
       results.push(...data.items.map((item: any) => this.extractResult(item)));
 
-      if (data.items.length < 10) break;
+      if (data.items.length < numPerPage) break;
     }
 
     return results;

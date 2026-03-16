@@ -72,3 +72,70 @@ describe('newsletterHtml', () => {
     expect(html).toContain('2026년 3월 2주차 뉴스레터');
   });
 });
+
+describe('newsletterHtml - template customization', () => {
+  it('shouldApplyCustomHeaderBgColor: 커스텀 헤더 배경색이 HTML에 반영', () => {
+    const html = generateNewsletterHtml([], {
+      title: 'Test',
+      subtitle: '',
+      template: { headerBgColor: '#ff5500' },
+    });
+
+    expect(html).toContain('#ff5500');
+    expect(html).not.toContain('#e3edff');
+  });
+
+  it('shouldApplyCustomBadgeColor: 커스텀 배지 색상이 HTML에 반영', () => {
+    const items = [makeItem()];
+    const html = generateNewsletterHtml(items, {
+      title: 'Test',
+      subtitle: '',
+      template: { badgeColor: '#00cc44' },
+    });
+
+    expect(html).toContain('#00cc44');
+    expect(html).not.toContain('#0047FF');
+  });
+
+  it('shouldApplyCustomFooterText: 커스텀 푸터 텍스트가 HTML에 반영', () => {
+    const html = generateNewsletterHtml([], {
+      title: 'Test',
+      subtitle: '',
+      template: { footerText: 'My Custom Newsletter' },
+    });
+
+    expect(html).toContain('My Custom Newsletter');
+  });
+
+  it('shouldApplyCustomFontFamily: 커스텀 폰트가 HTML에 반영', () => {
+    const html = generateNewsletterHtml([], {
+      title: 'Test',
+      subtitle: '',
+      template: { fontFamily: 'Roboto, sans-serif' },
+    });
+
+    expect(html).toContain('Roboto, sans-serif');
+    expect(html).toContain('Roboto');
+  });
+
+  it('shouldUseDefaultsWhenNoTemplateProvided: 템플릿 설정 없으면 기존 기본값 사용', () => {
+    const items = [makeItem()];
+    const html = generateNewsletterHtml(items, { title: 'Test', subtitle: '' });
+
+    expect(html).toContain('#e3edff');
+    expect(html).toContain('#0047FF');
+    expect(html).toContain('Noto Sans');
+  });
+
+  it('shouldApplyLogoUrl: 로고 URL이 헤더에 이미지로 표시', () => {
+    const html = generateNewsletterHtml([], {
+      title: 'Test',
+      subtitle: '',
+      template: { logoUrl: 'https://example.com/logo.png' },
+    });
+
+    expect(html).toContain('<img');
+    expect(html).toContain('https://example.com/logo.png');
+    expect(html).toContain('alt="Logo"');
+  });
+});
