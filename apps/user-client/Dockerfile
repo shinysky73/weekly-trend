@@ -5,7 +5,7 @@ RUN npm install -g pnpm
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/user-client/package.json ./apps/user-client/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --filter @weekly-trend/user-client
 
 COPY apps/user-client ./apps/user-client
 RUN pnpm -F @weekly-trend/user-client build

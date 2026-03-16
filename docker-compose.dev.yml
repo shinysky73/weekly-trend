@@ -1,18 +1,43 @@
-# Dev environment override — source changes reflected immediately (HMR)
+# Dev environment — source changes reflected via volume mounts (HMR)
 #
 # Usage:
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+#   docker compose -f docker-compose.dev.yml up --build
+#   docker compose -f docker-compose.dev.yml down
 
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=post1234
+      - POSTGRES_DB=weekly-trend
+    ports:
+      - "15432:5432"
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api-server:
     build:
       context: .
       dockerfile: apps/api-server/Dockerfile.dev
+    ports:
+      - "3002:3002"
+    env_file:
+      - apps/api-server/.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:post1234@db:5432/weekly-trend?schema=public
+      - CORS_ORIGIN=http://localhost:5175
     volumes:
       - ./apps/api-server/src:/app/apps/api-server/src
       - ./apps/api-server/prisma:/app/apps/api-server/prisma
-      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
 
   user-client:
     build:
@@ -25,3 +50,8 @@ services:
     volumes:
       - ./apps/user-client/src:/app/apps/user-client/src
       - ./apps/user-client/index.html:/app/apps/user-client/index.html
+    depends_on:
+      - api-server
+
+volumes:
+  pgdata-dev:

@@ -7,12 +7,11 @@ RUN npm install -g pnpm
 # Install dependencies (cache layer)
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/user-client/package.json ./apps/user-client/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --filter @weekly-trend/user-client
 
 # Copy source (volume mount will override src at runtime)
 COPY apps/user-client ./apps/user-client
 
 EXPOSE 5175
 
-# --host: allow external access from container (0.0.0.0 binding)
 CMD ["pnpm", "-F", "@weekly-trend/user-client", "dev", "--host"]

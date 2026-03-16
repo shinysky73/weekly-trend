@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-echo "Running Prisma migrations..."
-cd /app/apps/api-server && npx prisma migrate deploy
+echo "Pushing Prisma schema to database..."
+cd /app/apps/api-server && npx prisma db push --accept-data-loss
 
 echo "Starting API server..."
 exec node /app/apps/api-server/dist/src/main.js

@@ -1,0 +1,8 @@
+node_modules
+**/node_modules
+**/dist
+**/.env.local
+.git
+old_source
+docs
+HANDOFF.md
