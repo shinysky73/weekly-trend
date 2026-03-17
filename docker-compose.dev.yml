@@ -12,7 +12,7 @@ services:
       - POSTGRES_PASSWORD=post1234
       - POSTGRES_DB=weekly-trend
     ports:
-      - "15432:5432"
+      - "5432"
     volumes:
       - pgdata-dev:/var/lib/postgresql/data
     healthcheck:
