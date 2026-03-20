@@ -41,3 +41,5 @@ uploads/
 # Misc
 *.tsbuildinfo
 .turbo/
+
+old_source/
