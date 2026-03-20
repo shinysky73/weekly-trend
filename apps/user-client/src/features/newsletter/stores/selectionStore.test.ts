@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useSelectionStore } from './selectionStore';
+import { useSelectionStore, getDefaultTitle } from './selectionStore';
 
 describe('selectionStore', () => {
   beforeEach(() => {
@@ -9,7 +9,7 @@ describe('selectionStore', () => {
   it('shouldHaveInitialState: 초기 상태 검증', () => {
     const state = useSelectionStore.getState();
     expect(state.selectedIds.size).toBe(0);
-    expect(state.title).toBe('서비스기획센터 주간동향');
+    expect(state.title).toBe(getDefaultTitle());
   });
 
   it('shouldToggleNewsItem: toggleItem(id)으로 뉴스 선택/해제 토글', () => {
@@ -59,5 +59,53 @@ describe('selectionStore', () => {
   it('shouldReturnSelectedCount: 선택된 아이템 수 반환', () => {
     useSelectionStore.getState().selectCategory([1, 2, 3]);
     expect(useSelectionStore.getState().selectedIds.size).toBe(3);
+  });
+
+  it('shouldInitForRun_keepOnSameRunId: 같은 runId로 재진입 시 선택 유지', () => {
+    useSelectionStore.getState().initForRun(1);
+    useSelectionStore.getState().selectCategory([10, 20]);
+
+    useSelectionStore.getState().initForRun(1);
+    expect(useSelectionStore.getState().selectedIds.size).toBe(2);
+  });
+
+  it('shouldInitForRun_defaultOnNewRunId: 새 runId 진입 시 빈 선택으로 시작', () => {
+    useSelectionStore.getState().initForRun(1);
+    useSelectionStore.getState().selectCategory([10, 20]);
+
+    useSelectionStore.getState().initForRun(2);
+    expect(useSelectionStore.getState().selectedIds.size).toBe(0);
+    expect(useSelectionStore.getState().currentRunId).toBe(2);
+  });
+
+  it('shouldInitForRun_restorePreviousRun: 이전 run으로 돌아가면 선택 복원', () => {
+    useSelectionStore.getState().initForRun(1);
+    useSelectionStore.getState().selectCategory([10, 20]);
+    useSelectionStore.getState().setTitle('Run 1 제목');
+
+    useSelectionStore.getState().initForRun(2);
+    useSelectionStore.getState().selectCategory([30]);
+    useSelectionStore.getState().setTitle('Run 2 제목');
+
+    // run 1로 복귀
+    useSelectionStore.getState().initForRun(1);
+    expect(useSelectionStore.getState().selectedIds.size).toBe(2);
+    expect(useSelectionStore.getState().selectedIds.has(10)).toBe(true);
+    expect(useSelectionStore.getState().selectedIds.has(20)).toBe(true);
+    expect(useSelectionStore.getState().title).toBe('Run 1 제목');
+
+    // run 2로 복귀
+    useSelectionStore.getState().initForRun(2);
+    expect(useSelectionStore.getState().selectedIds.size).toBe(1);
+    expect(useSelectionStore.getState().selectedIds.has(30)).toBe(true);
+    expect(useSelectionStore.getState().title).toBe('Run 2 제목');
+  });
+});
+
+describe('getDefaultTitle', () => {
+  it('shouldFormatMonthAndWeek: 날짜에서 월과 주차를 추출하여 제목 생성', () => {
+    expect(getDefaultTitle(new Date('2026-03-20'))).toBe('서비스기획센터 주간동향(3월 3주차)');
+    expect(getDefaultTitle(new Date('2026-01-01'))).toBe('서비스기획센터 주간동향(1월 1주차)');
+    expect(getDefaultTitle(new Date('2026-12-31'))).toBe('서비스기획센터 주간동향(12월 5주차)');
   });
 });

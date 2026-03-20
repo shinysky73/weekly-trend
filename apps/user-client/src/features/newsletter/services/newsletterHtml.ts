@@ -17,24 +17,10 @@ interface NewsletterOptions {
   template?: Partial<AppSettings>;
 }
 
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  AI: { bg: '#dbeafe', text: '#1d4ed8' },
-  'Knowledge Data Platform': { bg: '#e0e7ff', text: '#4338ca' },
-  'Enterprise Portal': { bg: '#ede9fe', text: '#6d28d9' },
-  'Customer First Portal': { bg: '#FDF0CD', text: '#6E3C0A' },
-  MES: { bg: '#d1fae5', text: '#065f46' },
-};
+const CATEGORY_COLOR = { bg: '#dbeafe', text: '#1d4ed8' };
 
-const FALLBACK_COLORS = [
-  { bg: '#fce7f3', text: '#9d174d' },
-  { bg: '#ffedd5', text: '#9a3412' },
-  { bg: '#fef9c3', text: '#854d0e' },
-  { bg: '#ccfbf1', text: '#115e59' },
-  { bg: '#e0f2fe', text: '#075985' },
-];
-
-function getCategoryColor(name: string, index: number): { bg: string; text: string } {
-  return CATEGORY_COLORS[name] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+function getCategoryColor(): { bg: string; text: string } {
+  return CATEGORY_COLOR;
 }
 
 function escapeHtml(str: string): string {
@@ -45,17 +31,14 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export function computeWeekPeriod(dateStr: string): { monday: string; friday: string; monthWeek: string } | null {
+export function computeWeekPeriod(dateStr: string): { start: string; end: string; monthWeek: string } | null {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return null;
 
-  // Get Monday of this week (ISO week: Monday=1)
-  const day = d.getDay(); // 0=Sun, 1=Mon, ...
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() + diffToMonday);
-  const friday = new Date(monday);
-  friday.setDate(monday.getDate() + 4);
+  // Search period: last 7 days from run date
+  const end = new Date(d);
+  const start = new Date(d);
+  start.setDate(d.getDate() - 6);
 
   const fmt = (dt: Date) =>
     `${dt.getFullYear()}.${String(dt.getMonth() + 1).padStart(2, '0')}.${String(dt.getDate()).padStart(2, '0')}`;
@@ -67,8 +50,8 @@ export function computeWeekPeriod(dateStr: string): { monday: string; friday: st
   const month = `${d.getMonth() + 1}월`;
 
   return {
-    monday: fmt(monday),
-    friday: fmtShort(friday),
+    start: fmt(start),
+    end: fmtShort(end),
     monthWeek: `${month} ${weekNum}주차`,
   };
 }
@@ -107,8 +90,8 @@ function renderArticle(item: NewsletterItem, isLast: boolean): string {
 </tr>`;
 }
 
-function renderCategory(categoryName: string, items: NewsletterItem[], colorIndex: number): string {
-  const color = getCategoryColor(categoryName, colorIndex);
+function renderCategory(categoryName: string, items: NewsletterItem[]): string {
+  const color = getCategoryColor();
   const articles = items.map((item, i) => renderArticle(item, i === items.length - 1)).join('\n');
 
   return `<table width="100%" style="border-spacing:0;margin-bottom:24px">
@@ -146,9 +129,8 @@ export function generateNewsletterHtml(
     grouped.set(item.categoryName, list);
   }
 
-  let colorIndex = 0;
   const categoryHtml = Array.from(grouped.entries())
-    .map(([name, categoryItems]) => renderCategory(name, categoryItems, colorIndex++))
+    .map(([name, categoryItems]) => renderCategory(name, categoryItems))
     .join('\n');
 
   const periodHtml = period
@@ -156,7 +138,7 @@ export function generateNewsletterHtml(
         <tr>
           <td style="border-left:4px solid #60a5fa;padding-left:24px">
             <p style="font-size:30px;font-weight:300;color:white;margin:0;line-height:1.2;white-space:nowrap"><span style="font-weight:700">${period.monthWeek.split(' ')[0]}</span> ${period.monthWeek.split(' ').slice(1).join(' ')}</p>
-            <p style="color:#bfdbfe;opacity:0.8;margin:4px 0 0;font-size:14px;white-space:nowrap">${period.monday} — ${period.friday}</p>
+            <p style="color:#bfdbfe;opacity:0.8;margin:4px 0 0;font-size:14px;white-space:nowrap">${period.start} — ${period.end}</p>
           </td>
         </tr>
       </table>`
@@ -166,7 +148,7 @@ export function generateNewsletterHtml(
   const totalCollected = options.totalCollected ?? items.length;
   const categoryNames = Array.from(grouped.keys()).join(', ');
   const llmModel = t?.llmModel ?? SETTINGS_DEFAULTS.llmModel;
-  const dateRange = period ? `${period.monday.slice(5).replace('.', '/')} ~ ${period.friday.replace('.', '/')}` : '';
+  const dateRange = period ? `${period.start.slice(5).replace('.', '/')} ~ ${period.end.replace('.', '/')}` : '';
   const introText = totalCollected > 0
     ? `${dateRange ? `${dateRange}까지의 ` : ''}${categoryNames} 사업 관련 주요 기사입니다. 구글과 뉴스 사이트에서 수집된 총 ${totalCollected}개의 기사 중 핵심 기사들을 선별하여 공유드립니다. 요약은 ${llmModel}를 통해 작성되었습니다.`
     : '';
@@ -202,7 +184,7 @@ export function generateNewsletterHtml(
               <table width="100%" style="border-spacing:0;">
                 <tr>
                   <td style="vertical-align:bottom;">
-                    <p style="color:#bfdbfe;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin:0 0 16px;font-size:12px">Weekly Trends Report</p>
+                    <p style="color:#bfdbfe;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin:0 0 16px;font-size:12px">Weekly Trends</p>
                     <p style="font-size:32px;font-weight:400;color:white;margin:0;line-height:1.2">
                       서비스기획센터<br/>
                       <span style="font-weight:700">주간동향</span>

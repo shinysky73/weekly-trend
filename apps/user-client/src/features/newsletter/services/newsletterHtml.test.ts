@@ -14,24 +14,19 @@ const makeItem = (overrides: Partial<NewsletterItem> = {}): NewsletterItem => ({
 });
 
 describe('computeWeekPeriod', () => {
-  it('shouldComputeMondayToFriday: 해당 주의 월요일~금요일 반환', () => {
-    // 2026-03-18 is Wednesday
+  it('shouldComputeLast7Days: 실행일 기준 최근 7일 기간 반환', () => {
+    // 2026-03-18 → start: 03-12, end: 03-18
     const result = computeWeekPeriod('2026-03-18');
     expect(result).not.toBeNull();
-    expect(result!.monday).toBe('2026.03.16');
-    expect(result!.friday).toBe('03.20');
+    expect(result!.start).toBe('2026.03.12');
+    expect(result!.end).toBe('03.18');
   });
 
-  it('shouldHandleMonday: 월요일 입력 시 해당 월요일~금요일', () => {
-    const result = computeWeekPeriod('2026-03-16');
-    expect(result!.monday).toBe('2026.03.16');
-    expect(result!.friday).toBe('03.20');
-  });
-
-  it('shouldHandleSunday: 일요일 입력 시 해당 주 월요일~금요일', () => {
-    const result = computeWeekPeriod('2026-03-22');
-    expect(result!.monday).toBe('2026.03.16');
-    expect(result!.friday).toBe('03.20');
+  it('shouldHandleMonthBoundary: 월 경계를 넘는 경우 이전 달 날짜 반환', () => {
+    // 2026-03-03 → start: 02-25, end: 03-03
+    const result = computeWeekPeriod('2026-03-03');
+    expect(result!.start).toBe('2026.02.25');
+    expect(result!.end).toBe('03.03');
   });
 
   it('shouldComputeMonthWeek: N월 N주차 형식 반환', () => {
@@ -59,7 +54,7 @@ describe('newsletterHtml', () => {
 
     expect(html).toContain('서비스기획센터');
     expect(html).toContain('<span style="font-weight:700">주간동향</span>');
-    expect(html).toContain('Weekly Trends Report');
+    expect(html).toContain('Weekly Trends');
   });
 
   it('shouldGroupByCategoryInHtml: 뉴스를 카테고리별로 그룹화하여 카테고리 배지 포함 HTML 생성', () => {
@@ -75,8 +70,6 @@ describe('newsletterHtml', () => {
     expect(html).toContain('MES News');
     expect(html).toContain('#dbeafe');
     expect(html).toContain('#1d4ed8');
-    expect(html).toContain('#d1fae5');
-    expect(html).toContain('#065f46');
   });
 
   it('shouldRenderThumbnailLayout: thumbnailUrl이 있는 뉴스에 180x180 이미지 포함 레이아웃 적용', () => {
@@ -117,13 +110,13 @@ describe('newsletterHtml', () => {
     expect(html).toContain('VNTG');
   });
 
-  it('shouldRenderPeriodFromRunDate: runDate로 주간 기간 표시 (월~금)', () => {
+  it('shouldRenderPeriodFromRunDate: runDate 기준 최근 7일 기간 표시', () => {
     const html = generateNewsletterHtml([], { runDate: '2026-03-18' });
 
     expect(html).toContain('3월');
     expect(html).toContain('3주차');
-    expect(html).toContain('2026.03.16');
-    expect(html).toContain('03.20');
+    expect(html).toContain('2026.03.12');
+    expect(html).toContain('03.18');
   });
 
   it('shouldNotRenderPeriodWithoutRunDate: runDate 없으면 기간 미표시', () => {
@@ -138,7 +131,7 @@ describe('newsletterHtml - intro summary', () => {
     const items = [makeItem({ categoryName: 'AI' })];
     const html = generateNewsletterHtml(items, { runDate: '2026-03-18', totalCollected: 230 });
 
-    expect(html).toContain('03/16 ~ 03/20까지의');
+    expect(html).toContain('03/12 ~ 03/18까지의');
   });
 
   it('shouldIncludeCategoryListInIntro: 인트로에 카테고리 목록 포함', () => {
@@ -201,11 +194,12 @@ describe('newsletterHtml - template customization', () => {
     expect(html).toContain('VNTG');
   });
 
-  it('shouldUseFallbackColorsForUnknownCategories: 알 수 없는 카테고리에 폴백 색상 적용', () => {
+  it('shouldUseUnifiedColorForAllCategories: 모든 카테고리에 통일된 색상 적용', () => {
     const items = [makeItem({ categoryName: 'Custom Category' })];
     const html = generateNewsletterHtml(items, {});
 
     expect(html).toContain('Custom Category');
-    expect(html).toContain('#fce7f3');
+    expect(html).toContain('#dbeafe');
+    expect(html).toContain('#1d4ed8');
   });
 });

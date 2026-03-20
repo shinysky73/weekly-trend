@@ -15,7 +15,7 @@ export function RunDetailPage() {
   const runId = Number(id);
   const { data, isLoading, isError, error, groupedNews, refetch } = useRunDetail(runId);
   const [mode, setMode] = useState<'select' | 'preview'>('select');
-  const { selectedIds, clearAll } = useSelectionStore();
+  const { selectedIds, clearAll, initForRun } = useSelectionStore();
 
   // Filters
   const [filterCategory, setFilterCategory] = useState<number | null>(null);
@@ -52,8 +52,8 @@ export function RunDetailPage() {
   }, [filterCategory]);
 
   useEffect(() => {
-    clearAll();
-  }, [runId, clearAll]);
+    initForRun(runId);
+  }, [runId, initForRun]);
 
   // Auto-refresh if pipeline is still running
   useEffect(() => {
