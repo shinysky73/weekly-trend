@@ -138,7 +138,7 @@ export const useSelectionStore = create<SelectionState>()(
         title: state.title,
         currentRunId: state.currentRunId,
         runSelections: state.runSelections,
-      }),
+      }) as unknown as SelectionState,
     },
   ),
 );
