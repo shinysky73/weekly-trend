@@ -9,8 +9,8 @@ export interface RunDetailNews {
   publishedDate: string | null;
   thumbnailUrl: string | null;
   keyword: string;
-  categoryId: number;
-  category: { id: number; name: string };
+  categoryId: number | null;
+  category: { id: number; name: string } | null;
   summary: { text: string } | null;
 }
 

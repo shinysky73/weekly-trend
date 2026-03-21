@@ -20,13 +20,15 @@ export function useRunDetail(runId: number) {
 
     const map = new Map<number, CategoryGroup>();
     for (const item of query.data.news) {
-      const existing = map.get(item.categoryId);
+      const catId = item.categoryId ?? 0;
+      const catName = item.category?.name ?? '미분류';
+      const existing = map.get(catId);
       if (existing) {
         existing.news.push(item);
       } else {
-        map.set(item.categoryId, {
-          categoryId: item.categoryId,
-          categoryName: item.category.name,
+        map.set(catId, {
+          categoryId: catId,
+          categoryName: catName,
           news: [item],
         });
       }
